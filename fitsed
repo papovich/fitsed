@@ -1,0 +1,31 @@
+#!/bin/sh
+#----------------
+# command line script to run fitsed
+#
+# HISTORY:
+# Written by CJP 2016 August
+#
+# USAGE:  fitsed <file.param>(optional)
+# 
+# Calls fitsed.pro passing file.param as the parameter file.  
+# If file.param does not exist, then code looks for fitsed.param.
+
+
+# Check that IDL_DIR is set
+if [ -z "$IDL_DIR" ]; then
+    echo "FITSED: error, \$IDL_DIR environment variable not set"
+    exit 1
+fi 
+
+# check for argument
+if [ $# -gt 0 ]; then
+    STR="fitsed,'$1'"
+  else 
+    STR="fitsed,'fitsed.param'"
+fi 
+
+# run the code
+idl -e $STR
+exit 0
+
+#------------

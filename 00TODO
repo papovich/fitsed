@@ -1,0 +1,38 @@
+
+-- RIGHT now you must have a z_phot column in a file [CATALOG].zout where the main photometry catalog is [CATALOG].cat    You can get around this by linnking symbolically the .cat catalog to itself, like : ln -s [CATALOG].cat [CATALOG].zout  but it'd be better that if [CATALOG].zout doesn't exist, try and find the column in the .cat file. 
+
+------------------------------------------------------------
+-- generate_lut:  
+
+set up cb07, cb11, maraston, fsps models 
+
+fix endian stuff with /swap_if_big_endian flags to automatically set things correctly.
+
+automatically set outputfile?
+
+set up modeldir to point to environment variable
+
+
+------------------------------------------------------------
+-- fitchisq: 
+
+adopt something like the TEMP_ERR_FILE (TEMPLATE_ERROR.fast.v0.2) for sysmtematic flux errors like in fast? 
+
+allow for additional priors (on everything?  Maybe write separate codes to do the likelihood parts.
+
+maxpdf and minchisq values don't always match.  Fix it!
+
+add minchisq value for mass and sfr structures in result structure.
+
+------------------------------------------------------------
+-- read_param
+
+add defaults
+
+------------------------------------------------------------
+
+-- fitsed sh executable
+
+add an option to have it print a default/example fitsed.param file.
+
+------------------------------------------------------------
