@@ -15,4 +15,11 @@ but that should be it other than the basic IDL stuff (I tried hard to get all ou
 
 4. cd to the example_phot directory, and edit the fitsed.param file to point to all the right files and directories (I’m hoping I don’t have to explain it). 
 
-5. type:   fitsed fitsed.param at the command line
+5. type at the command line: 
+
+fitsed fitsed.param
+
+you can also run it from within IDL>  fitsed,'fitsed.param' (should work).
+
+6. from IDL you can run the 'play.pro' script to see best fit
+   results. 
