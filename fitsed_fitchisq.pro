@@ -406,7 +406,7 @@ PRO FITSED_FITCHISQ,  $
 
      zind = (where( abs(zed-z) eq min(abs(zed-z))))[0]
      ;; calculate lookback time for object 
-     lbt = lookback_time(z,1100.d,h=!h,omega=!omega,lambda=!lambda)
+     lbt = fitsed_lookback_time(z,1100.d,h=!h,omega=!omega,lambda=!lambda)
      if not keyword_set(tltuniverse) then lbt = 1d100 ; really big number
 
      myvec = dblarr(n_filters)
