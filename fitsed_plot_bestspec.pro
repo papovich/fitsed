@@ -5,6 +5,14 @@
 ; 
 ; file and plot the best fitting model spectrum over the photometry
 
+
+function findel, x, arr
+  
+  return, (where( abs( x - arr) eq min(abs(x - arr))))[0]
+  
+end
+
+
 pro fitsed_plot_bestspec, id, $
                           par=par, modelspec=modelspec, $
                           lambda=lambda, $
