@@ -45,8 +45,8 @@ pro fitsed_plot_bestspec, id, $
   restore,p.outdir+strn(long(id))+'.sav'
   print, '% Plotting best fit for object= '+strn(data[x].id)+', z= '+strn(data[x].z)
   print, '%    Log M/Msol= '+strn(alog10(result.mass.maxpdf))
-  print, '%    Log age= '+strn(result.log_age.minchisq)
-  print, '%    tau= '+strn(result.tau.minchisq)
+  print, '%    Log age/yr= '+strn(result.log_age.minchisq)
+  print, '%    tau/Gyr= '+strn(result.tau.minchisq)
   print, '%    metal= '+strn(result.metal.minchisq)
   print, '%    E(B-V)= '+strn(result.ebv.minchisq)
   print, '%    delta= '+strn(result.delta.minchisq)
