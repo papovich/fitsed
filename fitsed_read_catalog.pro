@@ -131,7 +131,8 @@ data.z = reform(zcat[zid,*])
 if keyword_set(name_zspec) then begin
    if zspid ne -1 then begin
       x = where( cat[zspid,*] gt 0.0,/null)
-      data[x].z = reform(cat[zspid,x])
+      if x ne !NULL then $
+         data[x].z = reform(cat[zspid,x])
    endif
 endif
 data.phot = cat[f1,*] * mag2ab
