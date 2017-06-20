@@ -394,7 +394,7 @@ PRO FITSED_FITCHISQ,  $
   sfr =  dblarr(n_age, n_ebv, n_delta, n_metal, n_tau)
 
   ;; find the index in the zed array for the galaxies' redshift
-  if z lt min(zed) or z gt max(zed) then begin
+  if ~finite(z) or  z lt min(zed) or z gt max(zed) then begin
      result=0.
      mass=0.
      sfr=0.
