@@ -48,10 +48,10 @@ function fitsed_read_filters, filters_res, lambda=lambda, catalog=catalog, $
   ;; read in the whole fugly file
   READCOL,FILTERS_RES,num,wl,tr,FORMAT='I,F,F',/silent
   infofile=FILTERS_RES+'.info'
-  if strmatch(FILTERS_RES,'*.latest') then begin
+  ;if strmatch(FILTERS_RES,'*.latest') then begin
      ;; filters.res ends in .latest, so change it to .info:
-     infofile=repstr(FILTERS_RES,'.latest','.info')
-  endif
+  ;   infofile=repstr(FILTERS_RES,'.latest','.info')
+  ;endif
   ;message,'% ERROR: cannot locate filter info file '+FILTERS_RES+'.info'
   if file_test(infofile) then begin
      READCOL,infofile,flen,fnames, $
