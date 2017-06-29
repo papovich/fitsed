@@ -345,9 +345,12 @@ PRO FITSED_FITCHISQ,  $
    ;; be fit:
    phot, dphot, z, $
    ;;
+   ;; this is the central wavelengths of the fitted filters
+   lambda_filters,$
+   ;;
    ;; the following are from generate_lut in the same order as in lut[...]
    lut, zed, log_ageArr, ebvArr, deltaArr, metalArr, tauArr, lutMstar, lutSFR, $
-   nomass=nomass, $ ;; if set it skips the mass derivation; BS says this makes the code go must faster
+   nomass=nomass, $ ;; if set it skips the mass derivation; BS says this makes the code go much faster
    ;;
    ;; these control the code: 
    mfactor=mfactor, $
@@ -360,17 +363,19 @@ PRO FITSED_FITCHISQ,  $
    badobj=badobj, $
    agelimit=agelimit, $ ; can be used to limit ages
    taulimit=taulimit, $ ; can be used to limit taus
+   rest_lowerlimit=rest_lowerlimit, $ ; rest-frame wavelength lower limit to the bands you fit
    chisq=chisq, $
    scale=scale, $
    pdf=pdf, $
    mass=mass, $
-   sfr=sfr, result=result
+   sfr=sfr, result=result 
 
   
   if not keyword_set(agelimit) then agelimit=0.0
   if not keyword_set(taulimit) then taulimit=0.0
   delvarx,  badobj
   if keyword_set(num_iter) then num_iter=num_iter else num_iter=100
+  if not keyword_set(rest_lowerlimit) then rest_lowerlimit=0.0
 
 ;; MFACTOR allows the user to scale the masses as needed.  The
 ;; default is to assume the photometry is in uJy. For nJy, set
@@ -387,24 +392,44 @@ PRO FITSED_FITCHISQ,  $
   n_tau = sz[5]
   n_filters = sz[6]
 
-  chisq = dblarr(n_age, n_ebv, n_delta, n_metal, n_tau)*0.0 + 1d62
-  scale = dblarr(n_age, n_ebv, n_delta, n_metal, n_tau)
-  pdf = dblarr(n_age, n_ebv, n_delta, n_metal, n_tau)
-  mass = dblarr(n_age, n_ebv, n_delta, n_metal, n_tau)
-  sfr =  dblarr(n_age, n_ebv, n_delta, n_metal, n_tau)
+  if n_tau eq 1 then begin
+      chisq = dblarr(n_age, n_ebv, n_delta, n_metal)*0.0 + 1d62
+      scale = dblarr(n_age, n_ebv, n_delta, n_metal)
+      pdf = dblarr(n_age, n_ebv, n_delta, n_metal)
+      mass = dblarr(n_age, n_ebv, n_delta, n_metal)
+      sfr =  dblarr(n_age, n_ebv, n_delta, n_metal)
+  endif else begin
+      chisq = dblarr(n_age, n_ebv, n_delta, n_metal, n_tau)*0.0 + 1d62
+      scale = dblarr(n_age, n_ebv, n_delta, n_metal, n_tau)
+      pdf = dblarr(n_age, n_ebv, n_delta, n_metal, n_tau)
+      mass = dblarr(n_age, n_ebv, n_delta, n_metal, n_tau)
+      sfr =  dblarr(n_age, n_ebv, n_delta, n_metal, n_tau)
+  endelse
 
   ;; find the index in the zed array for the galaxies' redshift
-  if ~finite(z) or  z lt min(zed) or z gt max(zed) then begin
-     result=0.
-     mass=0.
-     sfr=0.
+  if z lt min(zed) then begin
+     ;result=0.
+     ;mass=0.
+     ;sfr=0.
+     if z lt min(zed) then z = min(zed)
      message,$
         ' redshift of galaxy '+strn(z)+$
-        ' is outside range of models, skipping...',/continue
-     return
+        ' is outside range of models, forcing z=z_min...',/continue
+        ;' is outside range of models, skipping...',/continue
+     ;return
+  endif else if z gt max(zed) then begin
+     if z gt max(zed) then z = max(zed)
+     message,$
+        ' redshift of galaxy '+strn(z)+$
+        ' is outside range of models, forcing z=z_max...',/continue
+        ;' is outside range of models, skipping...',/continue
+  endif
+  ; BWS EDIT here
+  if 0 then begin
   endif else begin
 
      zind = (where( abs(zed-z) eq min(abs(zed-z))))[0]
+
      ;; calculate lookback time for object 
      lbt = fitsed_lookback_time(z,1100.d,h=!h,omega=!omega,lambda=!lambda)
      if not keyword_set(tltuniverse) then lbt = 1d100 ; really big number
@@ -423,6 +448,8 @@ PRO FITSED_FITCHISQ,  $
                  for i=0,n_age-1 do begin
                     myvec[*] = lut[zind,i,j,d,l,k,*]
                     sel_fin=where( finite(phot) eq 1 and finite(dphot) eq 1 and $
+		                   lambda_filters gt rest_lowerlimit and $ ; BWS addition - ignore bands at low lam_rest
+				   finite(myvec) eq 1 and $    ; ignore bad LUT filters, just in case
                                    phot gt -98 and dphot gt -98)
 
                     if n_elements(sel_fin) ge 2 then begin
@@ -477,7 +504,11 @@ PRO FITSED_FITCHISQ,  $
      y_ebv = y_p(ebvArr, pdf, 1, a=10d^log_ageArr, b=deltaArr, c=metalArr, d=tauArr)
      y_delta = y_p(deltaArr, pdf, 2, a=10d^log_ageArr, b=ebvArr, c=metalArr, d=tauArr)
      y_metal = y_p(metalArr, pdf, 3, a=10d^log_ageArr, b=ebvArr, c=deltaArr, d=tauArr)
-     y_tau = y_p(tauArr, pdf, 4, a=10d^log_ageArr, b=ebvArr, c=deltaArr, d=metalArr)
+     if n_tau gt 1 then begin
+         y_tau = y_p(tauArr, pdf, 4, a=10d^log_ageArr, b=ebvArr, c=deltaArr, d=metalArr)
+     endif else begin
+         y_tau = [1.0]
+     endelse
      
      ;; log Age
      getStats, log_ageArr, y_age, /log, $
@@ -552,6 +583,7 @@ PRO FITSED_FITCHISQ,  $
                hi95Index  = tmetal_hi95
 
      ;; Tau
+     if n_tau gt 1 then begin
      getStats, tauArr, y_tau, $
                bestx = tau_best, $
                bestIndex=ttau_best, $
@@ -568,10 +600,25 @@ PRO FITSED_FITCHISQ,  $
                hi68Index = ttau_hi68, $
                lo95Index = ttau_lo95, $
                hi95Index  = ttau_hi95
-
-     
-
-
+     endif else begin
+               tau_best     = 0.0   
+               ttau_best    = 0.0   
+               tau_mean     = 0.0   
+               ttau_mean    = 0.0   
+               tau_sigma    = 0.0   
+               tau_median   = 0.0   
+               ttau_median  = 0.0   
+               tau_lo68     = 0.0   
+               tau_hi68     = 0.0   
+               tau_lo95     = 0.0   
+               tau_hi95     = 0.0   
+               ttau_lo68    = 0.0   
+               ttau_hi68    = 0.0   
+               ttau_lo95    = 0.0   
+               ttau_hi95    = 0.0   
+     endelse                        
+   
+   
 ; Calculate stellar mass and SFR; Treated differently.  
 ; Need to sort-list masses over all of PDF, and
 ; start to add-up total PDF until confidence regions found.
@@ -661,7 +708,7 @@ PRO FITSED_FITCHISQ,  $
                           lo95_ind: tsfr_lo95, $
                           hi95_ind: tsfr_hi95 }
         endelse
-         
+        
         result = {y_age: y_age, $
                   y_ebv:y_ebv, $
                   y_metal: y_metal, $
@@ -717,7 +764,7 @@ PRO FITSED_FITCHISQ,  $
                         lo68: tau_lo68, hi68: tau_hi68, $
                         lo95: tau_lo95, hi95: tau_hi95 }, $
                   mass: mass_struct, sfr: sfr_struct $
-                 }
+                 } 
 
      endelse
   endelse
