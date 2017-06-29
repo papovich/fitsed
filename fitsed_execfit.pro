@@ -12,7 +12,9 @@ pro fitsed_execfit, p, data=data
                              ab_zeropoint=p.ab_zeropoint)
 
   restore,p.lutfile
+  lambda_filters= lambda
 
+  rest_lowerlimit = p.rest_lowerlimit
 ;;====
 ;; turn off floating precison error reporting:
   currentExcept= !Except
@@ -34,11 +36,11 @@ pro fitsed_execfit, p, data=data
      usez = data[i].z
    
      print,'working on object '+strn(id)+' with z='+strn(usez)
-     fitsed_fitchisq, phot,dphot, usez, $
+     fitsed_fitchisq, phot,dphot, usez, lambda_filters, $
                       lut, zed, log_ageArr, ebvArr, deltaArr, metalArr, tauArr, $
                       lutMstar, lutSFR, $
                       tltuniverse=p.ageltuniverse,$
-                      pdf=pdf, mass=mass, sfr=sfr, result=result
+                      pdf=pdf, mass=mass, sfr=sfr, result=result, rest_lowerlimit=rest_lowerlimit
      filename = p.outsaveHeader+strn(id)+'.sav'
 ;   print, outdir+filename, phot, phot/dphot
      lutfile=p.lutfile

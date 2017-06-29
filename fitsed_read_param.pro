@@ -61,6 +61,7 @@ pro fitsed_read_param, paramfile, params=params
         strcmp(key,'IMF') : imf=repstr(vars[2],"'","")
         strcmp(key,'EXTINCTION_LAW') : extinction_law=repstr(vars[2],"'","")
         strcmp(key,'NEBULAR_FESC') : nebular_fesc=fix(vars[2],type=4)
+        strcmp(key,'RESTLAM_LOWERLIMIT') : rest_lowerlimit=fix(vars[2],type=4)
 
         strcmp(key,'TAU') : tau = parseflt(vars[2],type=4)
         strcmp(key,'METAL') : metal=parseflt(vars[2],type=4)
@@ -139,6 +140,7 @@ params = { ssp: ssp, $
            metal: metal, $
            ;; 
            nebular_fesc: nebular_fesc, $
+           rest_lowerlimit: rest_lowerlimit,$
            ;; 
            err_flux_factor: err_flux_factor, $
            name_zphot: name_zphot, $
