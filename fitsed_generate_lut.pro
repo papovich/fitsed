@@ -301,7 +301,7 @@ PRO FITSED_GENERATE_LUT, OUTPUTFILE, $
   if keyword_set(extinction_law) then $
      extinction_law = extinction_law $
   else $
-     extinction_law = 'calzetti' 
+     extinction_law = 'fitsed_calzetti' 
 ;; this should be the name of the IDL routine that will be called as extinction_law(wavelength)
 
 ; SET NEBULAR EMISSION: 
@@ -435,17 +435,17 @@ PRO FITSED_GENERATE_LUT, OUTPUTFILE, $
 ; load in IGM unless Madau is requested (TO DO?)
 ;  restore,'$HOME/idl/pro/interpol_Meiksin.sav', VERB=VERBOSE
 
-  for bb=0,n_elements(metalArr)-1 do begin
-     for aa=0, n_elements(tauArr)-1 do begin
+  for imetal=0,n_elements(metalArr)-1 do begin
+     for itau=0, n_elements(tauArr)-1 do begin
         
       ;; define filename to model for this tau and metallicity:
-        isedfile = modelHdr+'_'+metalStr[bb]+'_tau'+taustr[aa]+'yr.ised'
+        isedfile = modelHdr+'_'+metalStr[imetal]+'_tau'+taustr[itau]+'yr.ised'
 
         if not file_test(isedfile, /read) then begin
            message,'% ERROR, File '+isedfile+$
                    ' does not exist or is unreadable, stopping'
         endif
-        if bb eq 0 and aa eq 0 then isedfiles=[isedfile] $
+        if imetal eq 0 and itau eq 0 then isedfiles=[isedfile] $
         else isedfiles=[isedfiles,isedfile]
 
 ; ================================================
@@ -469,8 +469,8 @@ PRO FITSED_GENERATE_LUT, OUTPUTFILE, $
            ;; find the index of the closest age: 
            age_index = findel(bcage,10d^log_ageArr[iage])
 
-           lutMstar[iage, bb, aa] = c4.mstar[age_index]
-           lutSFR[iage, bb, aa] = c4.sfr[age_index]
+           lutMstar[iage, imetal, itau] = c4.mstar[age_index]
+           lutSFR[iage, imetal, itau] = c4.sfr[age_index]
            
            ;; EBV LOOP: 
            for iebv=0,n_elements(ebvArr)-1 do begin
@@ -515,25 +515,20 @@ PRO FITSED_GENERATE_LUT, OUTPUTFILE, $
                        ;; redshift < 1.5, weird crap occurs.  DONT do this.
                     endelse
 
-
-;------------------------------------------------------------
-; LOOP OVER ALL BANDPASSES:
+                    ;------------------------------------------------------------
+                    ; LOOP OVER ALL BANDPASSES:
                     for ibands=0, sz_bands - 1 do begin
-                       
-; if this is the first time, then interpolate the filters so that they
-; match the ised files at each wavelength
-; 
-; int_filter does interpolate, but this is supposed to speed it up.  
-; the interpolateion should be the same for all ised files at the same
-; redshift:
-                       roundindex=izz
-                       ;; CAN CUT? if roundindex lt 0 then roundindex=0
-                       
+                       ; if this is the first time, then interpolate the filters so that they
+                       ; match the ised files at each wavelength
+                       ; 
+                       ; int_filter does interpolate, but this is supposed to speed it up.  
+                       ; the interpolateion should be the same for all ised files at the same
+                       ; redshift:
                        if $  ;; first time then do this:
-                          aa eq 0 and $
-                          bb eq 0 and $
+                          itau eq 0 and $
+                          imetal eq 0 and $
                           idelta eq deltamin and $
-                          iebv eq ebvmin and $
+                          iebv eq 0 and $
                           iage eq 0 then begin
                           if keyword_set(verbose) and ibands eq 0 then $
                              message,/cont, $
@@ -546,12 +541,12 @@ PRO FITSED_GENERATE_LUT, OUTPUTFILE, $
                              tinterpfilters = $
                                 interpolate_filter(zspec,filters,z)
                           endelse
-                             
-                          if z eq zmin then $
-                             interpfilters = $
-                             replicate(tinterpfilters, n_elements(zed))
-                          interpfilters[roundindex] = $
-                             tinterpfilters
+
+                          if z eq zmin then begin
+                              interpfilters = $
+                                 replicate(tinterpfilters, n_elements(zed))
+		          endif
+                          interpfilters[izz] = tinterpfilters
                        endif
 
 
@@ -562,12 +557,12 @@ PRO FITSED_GENERATE_LUT, OUTPUTFILE, $
                        if keyword_set(restFrame) then begin
                           aveflx = $
                              int_spectrum_noi( zspec, $
-                                               interpfilters[roundindex].(ibands), $
+                                               interpfilters[izz].(ibands), $
                                                zed=0.0, /flambda, /angstrom)
                        end else begin
                           aveflx = $
                              int_spectrum_noi( zspec, $
-                                               interpfilters[roundindex].(ibands), $
+                                               interpfilters[izz].(ibands), $
                                                zed=z, /flambda, /angstrom)
                        endelse
                        ;; at this point aveflx has the units: [ Lsol/Hz/Msol]
@@ -584,19 +579,20 @@ PRO FITSED_GENERATE_LUT, OUTPUTFILE, $
                            iage, $
                            iebv, $
                            idelta, $
-                           bb,$
-                           aa, $
+                           imetal,$
+                           itau, $
                            ibands] = $
-                          aveflx * 3.839d33/(4*!PI*ldsq[izz]) / $
-                             1d-32 / $
-                          double(c4.mstar[age_index])
-
+                             aveflx * 3.839d33/(4*!PI*ldsq[izz]) / 1d-32 / $
+                              double(lutMstar[iage, imetal, itau]) 
                     endfor      ; bandpass loop
                  endfor         ; redshift loop
               endfor            ; delta loop
            endfor               ; EBV loop
+           print, "                        Pew Pew!! I just did Age #"+string(iage+1)+" of "+string(n_elements(log_ageArr))
         endfor                  ; age loop
+        print, "                        Well, shucks.. I'm only working on Tau #"+string(itau+1)+string(n_elements(tauArr))
      endfor                     ; TAU loop
+     print, "                        Cmon fella.. I JUST finished Metal #"+string(imetal+1)+string(n_elements(metalArr))
   endfor                        ; METAL loop
   
   save,filename=outputfile,$
