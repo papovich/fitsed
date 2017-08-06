@@ -15,6 +15,7 @@ end
 
 pro fitsed_plot_bestspec, id, $
                           par=par, modelspec=modelspec, $
+                          modelphot=modelphot, $
                           lambda=lambda, $
                           phot=phot, dphot=dphot, $
                           data=data, $
@@ -121,6 +122,23 @@ pro fitsed_plot_bestspec, id, $
   ;; print photometry, filter wavelengths and die
   ;print, data[x].phot, data[x].dphot
   ;print, lambda
+
+  ;; figure out model photometry from LUT file:
+  restore,lutfile,/skip_existing
+  ;; should give you lut, zed, etc... 
+                                ; need to figure out best model here!
+  zind = (where( abs(zed-data.z) eq min(abs(zed-data.z))))[0]
+  i = result.log_age.minchisq_ind
+  j = result.ebv.minchisq_ind
+  d =result.delta.minchisq_ind
+  k = result.tau.minchisq_ind
+  l = result.metal.minchisq_ind
+  myvec = (lut[zind,i,j,d,l,k,*])[*]
+
+mfactor = 1000d ;* 10d^(0.4*(23.9-p.AB_ZEROPOINT))               ;                             ;for uJy
+  myscale = result.mass.minchisq / mfactor
+  model_phot = myvec*myscale
+
   
   ang='!3'+string("305b) & ang='!3'+string("305b) ;; repeated just to get " level correct
 
@@ -130,6 +148,8 @@ pro fitsed_plot_bestspec, id, $
         xr=[1000, 100000],/xlog,/ylog, yr=yrange, $
         xtit='observed wavelength ['+ang+']', ytit='flux density [!4l!3Jy]', $
         _EXTRA=_EXTRA
+  oplot, lambda, model_phot, $
+              color=djs_icolor('yellow'), psym=6, symsize=3
   oploterror, lambda, data[x].phot, data[x].dphot, $
               color=djs_icolor('red'), psym=6, symsize=2
 
