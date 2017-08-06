@@ -7,7 +7,7 @@
 
 pro fitsed_bcspectrum, isedfile,  z, mass, tage, tebv, $
                        chabrier=chabrier, cb07=cb07, $
-                       nebular_emission=nebular_emission, $
+                       ;nebular_emission=nebular_emission, $
                        nebular_fesc=nebular_fesc, $
                        outspectrum=outspectrum, $
                        nebular_nolya=nebular_nolya, $
@@ -33,7 +33,10 @@ else $
   if not keyword_set(nebular_fesc) then nebular_fesc=0.0 
   ;; default is that all LyC photons absorbed and converted to other
   ;; emission lines.
-  if not keyword_set(nebular_emission) then nebular_fesc=1.0 
+;  if not keyword_set(nebular_fesc) then nebular_fesc=0.0 else $
+;     nebular_fesc=nebular_fesc
+  
+;  print, nebular_fesc
   ;; this default means that no emission lines are added.
   if not keyword_set(nebular_lya_offset) then nebular_lya_offset = 5000.
   ; the default here is to have lya offset by 5000 kms red.
@@ -48,20 +51,21 @@ else $
   tspec[0,*] = bcspec[0,*]
   tspec[1,*] = bcspec[bciage+1,*]
   
-; add nebular emission if requested: 
-  if keyword_set(nebular_emission) then begin
-     if nebular_fesc lt 1.0 then begin
-        nly = double(c3.nly[bciage])
-        if finite(nly) eq 0 then nly=0.d
-        metalZ=float(metalZ)
-        fitsed_calc_nebular, reform(tspec[0,*]), tmp, nolya=nebular_nolya, $
-                             metallicity=metalZ,$
-                             n_lyc=nly, $
-                             lya_offset=nebular_lya_offset, $
-                             continuum=nebular_continuum
-        tspec[1,*] = tspec[1,*] + tmp
-     endif
+; add nebular emission if requested:
+ ; if keyword_set(nebular_emission) then begin
+  if nebular_fesc lt 1.0 then begin
+     print, 'adding emission lines'
+     nly = double(c3.nly[bciage])
+     if finite(nly) eq 0 then nly=0.d
+     metalZ=float(metalZ)
+     fitsed_calc_nebular, reform(tspec[0,*]), tmp, nolya=nebular_nolya, $
+                          metallicity=metalZ,$
+                          n_lyc=nly, $
+                          lya_offset=nebular_lya_offset, $
+                          continuum=nebular_continuum
+     tspec[1,*] = tspec[1,*] + tmp
   endif
+;  endif
   
   outspectrum = tspec
 ;; dust attenuation
