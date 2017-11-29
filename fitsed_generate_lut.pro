@@ -467,7 +467,7 @@ PRO FITSED_GENERATE_LUT, OUTPUTFILE, $
         for iage=0, n_elements(log_ageArr)-1 do begin
          
            ;; find the index of the closest age: 
-           age_index = findel(bcage,10d^log_ageArr[iage])
+           age_index = findel(bcage[1:*],10d^log_ageArr[iage])
 
            lutMstar[iage, imetal, itau] = c4.mstar[age_index]
            lutSFR[iage, imetal, itau] = c4.sfr[age_index]
