@@ -53,7 +53,8 @@ pro fitsed_read_param, paramfile, params=params
         strcmp(key,'SAVEFILE_HEAD') : outsaveHeader=repstr(vars[2],"'","")
         strcmp(key,'WRITE_SAVE') : write_sav=fix(vars[2],type=2)
         strcmp(key,'OUTPUT_FILE') : output=repstr(vars[2],"'","")
-        strcmp(key,'BEST_FIT') : bestfit=fix(vars[2],type=2)
+        strcmp(key,'BESTFIT_OUTPUT_FILE') : bestoutput=repstr(vars[2],"'","")
+        ;; strcmp(key,'BEST_FIT') : bestfit=fix(vars[2],type=2)
         strcmp(key,'SKIP_FIT') : skipfit=fix(vars[2],type=2)
 
         strcmp(key,'LIBRARY') : ssp=repstr(vars[2],"'","")
@@ -94,9 +95,23 @@ pro fitsed_read_param, paramfile, params=params
      extinction_law='fitsed_calzetti' ;; default is calzetti
 
   if strcmp(output,'') then begin
-     if bestfit then output=repstr(catalog,'.cat','.bestfit.fitsed.cat') else $
-        output=repstr(catalog,'.cat','.fitsed.cat')
+     output=repstr(catalog,'.cat','.fitsed.cat')
   endif
+  if strcmp(output,catalog) then begin
+     print,'% FITSED_READ_PARAM: error output cat and input cat have same name, shame, shame, crashing.... '
+     stop
+  endif
+  ;; set output - try to guess what might have to happen:
+
+  if strcmp(bestoutput,'') then begin
+     bestoutput = repstr(output,'.cat','.bestfit.cat')
+     if strcmp(output,bestoutput) then begin
+        print,'% FITSED_READ_PARAM: output and best-fit output file names have same name.  Make sure your ouput catalog ends in .cat (or it will crash)'
+        stop
+     endif
+  endif
+  
+
   if strcmp(lutfile,'') then $
      lutfile= 'fitsed_lut_'+repstr(catalog,'.cat','')+'_'+$
               ssp+'_'+imf+'_'+extinction_law+'.sav'
@@ -153,7 +168,8 @@ params = { ssp: ssp, $
            catalog: catdir+catalog, $
            lutfile: lutfile, $
            fitsed_cat: catdir+output, $
-           bestfit: bestfit, $
+           bestfit_cat: catdir+bestoutput, $
+;           bestfit: bestfit, $
            skipfit: skipfit, $
            outdir: outdir $
          }

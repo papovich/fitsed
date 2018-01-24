@@ -48,6 +48,7 @@ for i=0L, ndata-1 do begin
     if n_elements(strsplit(lines[idata[i]],/extract)) ne ncol then begin
        print,'ERROR: when reading '+catalog
        print,'       number of columns is not constant throughout file'
+       stop
        exit
     endif
     data[*,i] = fix( strsplit(lines[idata[i]],/extract), type=4) ; type 4 
@@ -114,7 +115,7 @@ n_filt = fitsed_read_translate(catalog, fl_ind=f1, err_ind=e1)
 
 if n_elements(f1) ne n_elements(e1) or $
    (n_elements(f1) eq 0) then $
-      message, 'ERROR: number of flux and error columns are not the same (or zero) in catalog file '+catalog
+   message, 'ERROR: number of flux and error columns are not the same (or zero) in catalog file '+catalog
 
 ; apply ab_zeropoint to get all fluxes to uJy (assume uJy): 
 mag2ab = 10d^(-0.4*(ab_zeropoint-23.9))

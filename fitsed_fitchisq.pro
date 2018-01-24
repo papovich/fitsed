@@ -468,7 +468,7 @@ PRO FITSED_FITCHISQ,  $
                           chisq[i,j,d,l,k] = $
                           total( (myvec[sel_fin]*scale[i,j,d,l,k] - $
                                   phot[sel_fin])^2 / $
-                                 dphot[sel_fin]^2 )
+                                 dphot[sel_fin]^2 ) 
                     endif  else begin ;; there are <= 2 good photometry points:
                        scale[i,j,d,l,k] = 0.0000d
                        ;; leave chisq, etc, alone
@@ -527,7 +527,7 @@ PRO FITSED_FITCHISQ,  $
                hi68Index = tlog_age_hi68, $
                lo95Index = tlog_age_lo95, $
                hi95Index  = tlog_age_hi95
-        
+
      ;; E(B-V)
      getStats, ebvArr, y_ebv,  $
                bestx = ebv_best, $
@@ -617,7 +617,6 @@ PRO FITSED_FITCHISQ,  $
                ttau_lo95    = 0.0   
                ttau_hi95    = 0.0   
      endelse                        
-   
    
 ; Calculate stellar mass and SFR; Treated differently.  
 ; Need to sort-list masses over all of PDF, and

@@ -21,10 +21,11 @@ if ~file_test(p.lutfile) then begin
    ;; generate Look Up Table (LUT): 
 
    delvarx, chabrier, endian
-   if strcmp(p.ssp,'bc03') and strcmp(p.imf,'chab') then begin
-      chabrier=1
-      endian='big'
-   endif
+;   if strcmp(p.ssp,'bc03') and strcmp(p.imf,'chab') then begin
+;      chabrier=1
+;      endian='big'
+;   endif
+   endian='native'
 
    fitsed_generate_lut,p.lutfile, /verbose, $
                        ssp=p.ssp, $
@@ -58,16 +59,17 @@ if ~p.skipfit then $
 ;;
 ;; write out results to output file
 if ~p.skipfit then $
-   fitsed_write_catalog, data=data, paramfile=paramfile, $
-                         bestfit=p.bestfit, $
-                         p.fitsed_cat, p.outdir $
+   ;; always write out catalog, first full catalog, then bestfit catalog
+   fitsed_write_catalog,p,  data=data, paramfile=paramfile $
+                         ; p.fitsed_cat, p.outdir $
 else $
-   fitsed_write_catalog, data=data, catalog=p.catalog, paramfile=paramfile, $
-                         bestfit=p.bestfit, $
-                         ab_zeropoint=p.ab_zeropoint, $
-                         name_zphot=p.name_zphot, $
-                         name_zspec=p.name_zspec, $
-                         p.fitsed_cat, p.outdir
+   fitsed_write_catalog, p, data=data, $
+                         paramfile=paramfile
+                         ; catalog=p.catalog, paramfile=paramfile, $
+                         ;ab_zeropoint=p.ab_zeropoint, $
+                         ;name_zphot=p.name_zphot, $
+                         ;name_zspec=p.name_zspec, $
+                         ;p.fitsed_cat, p.outdir
 
 message,/cont, 'All done!'
 

@@ -20,6 +20,8 @@ pro fitsed_plot_bestspec, id, $
                           phot=phot, dphot=dphot, $
                           data=data, $
                           result=result, $
+                          nophot=nophot, $ ; dont plot real phot
+                          nomodelphot=nomodelphot, $ ; dont plot model phot
                           _EXTRA=_EXTRA, $
                           stop=stop
 
@@ -148,10 +150,13 @@ mfactor = 1000d ;* 10d^(0.4*(23.9-p.AB_ZEROPOINT))               ;              
         xr=[1000, 100000],/xlog,/ylog, yr=yrange, $
         xtit='observed wavelength ['+ang+']', ytit='flux density [!4l!3Jy]', $
         _EXTRA=_EXTRA
-  oplot, lambda, model_phot, $
-              color=djs_icolor('yellow'), psym=6, symsize=3
-  oploterror, lambda, data[x].phot, data[x].dphot, $
-              color=djs_icolor('red'), psym=6, symsize=2
+  if not keyword_set(nomodelphot) then $
+     oplot, lambda, model_phot, $
+            color=djs_icolor('yellow'), psym=6, symsize=3
+  modelphot=model_phot
+  if not keyword_set(nophot) then $
+     oploterror, lambda, data[x].phot, data[x].dphot, $
+                 color=djs_icolor('red'), psym=6, symsize=2
 
   data=data[x]
   phot=data[x].phot
