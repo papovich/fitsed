@@ -31,6 +31,8 @@ pro fitsed_read_param, paramfile, params=params
   close, lun
   free_lun, lun
 
+  bestoutput=''
+  
   for i=0,n_elements(lines)-1 do begin
      first_char = strmid(lines[i],0,1)
      if first_char eq '#' then continue ; skip commmented lines
