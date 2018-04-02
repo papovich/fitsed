@@ -32,7 +32,11 @@ pro fitsed_read_param, paramfile, params=params
   free_lun, lun
 
   bestoutput=''
+<<<<<<< HEAD
 
+=======
+  
+>>>>>>> 18cf32f6a1b7cf65744705872fd1ffb6c7404b43
   for i=0,n_elements(lines)-1 do begin
      first_char = strmid(lines[i],0,1)
      if first_char eq '#' then continue ; skip commmented lines
@@ -108,7 +112,11 @@ pro fitsed_read_param, paramfile, params=params
      stop
   endif
   ;; set output - try to guess what might have to happen:
+<<<<<<< HEAD
   
+=======
+
+>>>>>>> 18cf32f6a1b7cf65744705872fd1ffb6c7404b43
   if strcmp(bestoutput,'') then begin
      bestoutput = repstr(output,'.cat','.bestfit.cat')
      if strcmp(output,bestoutput) then begin
@@ -116,7 +124,11 @@ pro fitsed_read_param, paramfile, params=params
         stop
      endif
   endif
+<<<<<<< HEAD
 
+=======
+  
+>>>>>>> 18cf32f6a1b7cf65744705872fd1ffb6c7404b43
 
   if strcmp(lutfile,'') then $
      lutfile= 'fitsed_lut_'+repstr(catalog,'.cat','')+'_'+$

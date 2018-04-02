@@ -25,11 +25,11 @@ IF N_PARAMS(0) LT 2 THEN BEGIN
     RETURN,0.0
 ENDIF
 
-if EBV eq 0.0 then return, 0.0
+if EBV le 0.0 then return, 0.0
 
-klambda = calzetti( L ) 
+A_lambda = fitsed_calzetti( L , EBV ) 
 DELTA = 0.62 * alog10(EBV) + 0.26
-return, klambda * EBV * (l / 5500.)^delta
+return, A_lambda * (l / 5500.)^delta
 
 END
 

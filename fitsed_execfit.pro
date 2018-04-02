@@ -36,6 +36,7 @@ pro fitsed_execfit, p, data=data
      usez = data[i].z
    
      print,'working on object '+strn(id)+' with z='+strn(usez)
+
      fitsed_fitchisq, phot,dphot, usez, lambda_filters, $
                       lut, zed, log_ageArr, ebvArr, deltaArr, metalArr, tauArr, $
                       lutMstar, lutSFR, $

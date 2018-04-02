@@ -5,6 +5,7 @@
                          ;name_zphot=p.name_zphot, $
                          ;name_zspec=p.name_zspec, $
                          ;p.fitsed_cat, p.outdir
+<<<<<<< HEAD
 
 pro fitsed_write_catalog, p, data=data, paramfile=paramfile
                           ;catalog=catalog, 
@@ -18,6 +19,21 @@ pro fitsed_write_catalog, p, data=data, paramfile=paramfile
   ;; last three keywords (all passed to _read_catalog) not really
   ;; needed... 
 
+=======
+
+pro fitsed_write_catalog, p, data=data, paramfile=paramfile
+                          ;catalog=catalog, 
+;                          bestfit=bestfit, $ ; write only best fit values
+                          ;paramfile=paramfile, $ ; copied to header of fitsed_cat
+                          ;fileHeader=fileHeader, $ ; header used to make .sav files
+                          ;name_zphot=name_zphot, $ ; passed to read_catalog
+                          ;name_zspec=name_zspec, $ ; passed to read_catalog
+                           ;         ab_zeropoint=ab_zeropoint ; passed to read_catalog
+                          
+  ;; last three keywords (all passed to _read_catalog) not really
+                          ;; needed...
+                          
+>>>>>>> 18cf32f6a1b7cf65744705872fd1ffb6c7404b43
   fitsed_cat = p.fitsed_cat
   bestfit_cat = p.bestfit_cat
   outdir=p.outdir
@@ -27,7 +43,11 @@ pro fitsed_write_catalog, p, data=data, paramfile=paramfile
   fitsed_cat = p.fitsed_cat
   catalog=p.catalog
 
+<<<<<<< HEAD
   ;;
+=======
+;;
+>>>>>>> 18cf32f6a1b7cf65744705872fd1ffb6c7404b43
   ;; outdir must have '/' trailing or things will go nuts... 
   if not keyword_set(fileHeader) then fileHeader=''
 
@@ -96,20 +116,34 @@ pro fitsed_write_catalog, p, data=data, paramfile=paramfile
      colstr = ''
      for i=0,n_elements(columns)-1 do colstr = colstr+string(format='('+myformat[i]+',x)',columns[i])
 ; FIX THE ABOVE
+<<<<<<< HEAD
           
      printf,lun, '# '+colstr
 
+=======
+     
+     printf,lun, '# '+colstr
+     
+>>>>>>> 18cf32f6a1b7cf65744705872fd1ffb6c7404b43
      ;;if not keyword_set(bestfit) then begin
      if ~bestfit then begin
         format = '(i8,x,f6.3,x, 3(f7.3,x), 3(f7.4,x), 3(f7.2,x), 3(f6.2,x), 3(f7.2,x), 3(f8.2,x), 3(f9.3,x))'
      endif else begin
         format = '(i8,x,f6.3,x, 1(f7.3,x), 1(f7.4,x), 1(f7.2,x), 1(f6.2,x), 1(f7.2,x), 1(f8.2,x), 1(f9.3,x))'
      endelse
+<<<<<<< HEAD
 
      for i=0,n_elements(id)-1 do begin
         delvarx, result
         restore,outdir+fileHeader+strn(id[i])+'.sav'
 
+=======
+     
+     for i=0,n_elements(id)-1 do begin
+        delvarx, result
+        restore,outdir+fileHeader+strn(id[i])+'.sav'
+        
+>>>>>>> 18cf32f6a1b7cf65744705872fd1ffb6c7404b43
         if ~bestfit then begin
            if total(size(result)) gt 5 then begin
               printf,lun,format=format, $
@@ -143,6 +177,7 @@ pro fitsed_write_catalog, p, data=data, paramfile=paramfile
                      replicate(0.0,7)
            endelse     
         endelse
+<<<<<<< HEAD
 
 
      endfor
@@ -151,5 +186,15 @@ pro fitsed_write_catalog, p, data=data, paramfile=paramfile
      free_lun,lun
   endfor
 
+=======
+        
+        
+     endfor
+     
+     close,lun
+     free_lun,lun
+  endfor
+
+>>>>>>> 18cf32f6a1b7cf65744705872fd1ffb6c7404b43
 end
 

@@ -18,9 +18,12 @@ while ~done do begin
   ;;print,line
   if strcmp(line,'#',1) ne 1 then done=1
   if ~done then begin
-     if count gt 1 then $
+     if count gt 1 then begin
         if strcmp(lastline,'#') eq 0 and $
-        strcmp(lastline,'#                                                                                                                      M*_tot=') eq 0  then penlastline=lastline
+        strcmp(lastline,'#                                                                                                                      M*_tot=') eq 0 and $
+        strcmp(lastline,'#             <---------------- SDSS AB mag --------------->       <---------------------- CFHT MegaCam AB mag --------------------->  '+$
+        '    <---------------- GALEX AB mag and flux --------------->') eq 0 then penlastline=lastline 
+     endif
      lastline=line
   endif
 endwhile
@@ -292,8 +295,8 @@ spec = fltarr(nage+1, nwave) ;; 0th is wavelength
 tflux = read_binary(lun,data_type=4,data_dims=nwave,endian=endian)
 spec[0,*] = tflux
 
-print,'Reading in ised file with '+strn(nage)+' age steps'
-print,'                     and '+strn(nwave)+' wavelength steps'
+;print,'Reading in ised file with '+strn(nage)+' age steps'
+;print,'                     and '+strn(nwave)+' wavelength steps'
 
 ; now iterate to get fluxes: 
 for i=1,nage do begin

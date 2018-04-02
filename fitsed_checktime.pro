@@ -10,7 +10,7 @@ pro FITSED_CHECKTIME, timestart, comment
   days= STRCOMPRESS(days)
   hours= STRCOMPRESS(hours)
   minutes=STRCOMPRESS(minutes)
-  seconds=STRCOMPRESS(seconds)
+  seconds=STRING(seconds, FORMAT='(D5.2)')
   
   if comment then print, '%  Working on ',comment
   print, '% Runtime= '+days+'d'+hours+'h'+minutes+'m'+seconds+'s'
