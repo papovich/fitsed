@@ -48,6 +48,7 @@ for i=0L, ndata-1 do begin
     if n_elements(strsplit(lines[idata[i]],/extract)) ne ncol then begin
        print,'ERROR: when reading '+catalog
        print,'       number of columns is not constant throughout file'
+       stop
        exit
     endif
     data[*,i] = fix( strsplit(lines[idata[i]],/extract), type=4) ; type 4 

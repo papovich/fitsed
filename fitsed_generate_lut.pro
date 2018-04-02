@@ -21,6 +21,7 @@ on_error,2
 
 if ( N_params() LT 2) then begin
     print,'% Syntax: ans = int_spectrum(spec,bandpass,<zed=z>,</flambda>,</angstrom>)'
+  print, "           zeds:", zed
     return,0.0
 endif
 
@@ -216,6 +217,7 @@ PRO FITSED_GENERATE_LUT, OUTPUTFILE, $
                          ZSTEP=ZSTEP,$
                          ZLOG=ZLOG, $ ; if set, then code assumes ZSTEP is delta(log z), ZED will still be redshift (but spacing will be log)
                          ZED=ZED, $
+                         ZCUSTOM=ZCUSTOM,$ ; Useful for z=10 stuff
 ;
                          EXTINCTION_LAW=EXTINCTION_LAW, $
                          EBVMIN=EBVMIN, $
@@ -355,6 +357,18 @@ PRO FITSED_GENERATE_LUT, OUTPUTFILE, $
   TAUSTR=strarr(n_elements(tauArr))
   for i=0,n_elements(tauArr)-1 do begin
      case tauArr[i] of
+        -100 : taustr[i] = 'neg100g'
+        -10 : taustr[i] = 'neg10g'
+        -1 : taustr[i] = 'neg1g'
+        -70 : taustr[i] = 'neg70g'
+        -7 : taustr[i] = 'neg7g'
+        -0.7 : taustr[i] = 'neg700m'
+        -50 : taustr[i] = 'neg50g'
+        -5 : taustr[i] = 'neg5g'
+        -0.5 : taustr[i] = 'neg500m'
+        -30 : taustr[i] = 'neg30g'
+        -3 : taustr[i] = 'neg3g'
+        -0.3 : taustr[i] = 'neg300m'
         100 : taustr[i] = '100g'
         10 : taustr[i] = '10g'
         1 : taustr[i] = '1g'
@@ -406,6 +420,11 @@ PRO FITSED_GENERATE_LUT, OUTPUTFILE, $
      while max(zed) lt zmax do zed = [zed, max(zed)+zstep*(1+max(zed))]
 ;     zed = findgen( (alog10(zmax)-alog10(zmin))/zstep + 2) * zstep + alog10(zmin)
 ;     zed=10^zed
+  endif else if (zcustom)[0] ne -1 then begin
+      print, "setting ZCUSTOM"
+      zed = zcustom
+      zmin=zcustom[0]
+      zmax=zcustom[-1]
   endif else $
      zed = findgen( (zmax-zmin)/zstep + 1) * zstep + zmin
 
@@ -467,7 +486,7 @@ PRO FITSED_GENERATE_LUT, OUTPUTFILE, $
         for iage=0, n_elements(log_ageArr)-1 do begin
          
            ;; find the index of the closest age: 
-           age_index = findel(bcage,10d^log_ageArr[iage])
+           age_index = findel(bcage[1:*],10d^log_ageArr[iage])
 
            lutMstar[iage, imetal, itau] = c4.mstar[age_index]
            lutSFR[iage, imetal, itau] = c4.sfr[age_index]

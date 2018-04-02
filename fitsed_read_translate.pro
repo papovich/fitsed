@@ -68,7 +68,10 @@ function fitsed_read_translate, catalog, fl_ind=fl_ind, err_ind=err_ind, $
            endelse
         endif
      endfor
-  endif
+  endif else begin
+     message,'Cannot find translate file: ',translate
+  endelse
+ 
 
   ;; capitalize everything:
   ;;header=strupcase(header)

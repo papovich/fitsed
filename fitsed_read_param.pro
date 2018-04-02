@@ -31,6 +31,8 @@ pro fitsed_read_param, paramfile, params=params
   close, lun
   free_lun, lun
 
+  bestoutput=''
+
   for i=0,n_elements(lines)-1 do begin
      first_char = strmid(lines[i],0,1)
      if first_char eq '#' then continue ; skip commmented lines
@@ -53,7 +55,8 @@ pro fitsed_read_param, paramfile, params=params
         strcmp(key,'SAVEFILE_HEAD') : outsaveHeader=repstr(vars[2],"'","")
         strcmp(key,'WRITE_SAVE') : write_sav=fix(vars[2],type=2)
         strcmp(key,'OUTPUT_FILE') : output=repstr(vars[2],"'","")
-        strcmp(key,'BEST_FIT') : bestfit=fix(vars[2],type=2)
+        strcmp(key,'BESTFIT_OUTPUT_FILE') : bestoutput=repstr(vars[2],"'","")
+        ;; strcmp(key,'BEST_FIT') : bestfit=fix(vars[2],type=2)
         strcmp(key,'SKIP_FIT') : skipfit=fix(vars[2],type=2)
 
         strcmp(key,'LIBRARY') : ssp=repstr(vars[2],"'","")
@@ -73,6 +76,7 @@ pro fitsed_read_param, paramfile, params=params
         strcmp(key,'Z_MAX') : zmax=fix(vars[2],type=4)
         strcmp(key,'Z_STEP') : zstep=fix(vars[2],type=4)
         strcmp(key,'Z_LOG') : zlog=fix(vars[2],type=2)
+        strcmp(key,'Z_CUSTOM') : zcustom=parseflt(vars[2],type=4)
         strcmp(key,'EBV_MIN') : ebvmin=fix(vars[2],type=4)
         strcmp(key,'EBV_MAX') : ebvmax=fix(vars[2],type=4)
         strcmp(key,'EBV_STEP') : ebvstep=fix(vars[2],type=4)
@@ -90,13 +94,30 @@ pro fitsed_read_param, paramfile, params=params
   endfor
 
   ;; set extinction law: 
-  if strcmp(extinction_law,'salmon') then extinction_law='fitsed_salmon' else $
+  if strcmp(extinction_law,'salmon') then begin
+     print,"%% Salmon extinction law assumed"
+     extinction_law='fitsed_salmon' 
+  endif else $
      extinction_law='fitsed_calzetti' ;; default is calzetti
 
   if strcmp(output,'') then begin
-     if bestfit then output=repstr(catalog,'.cat','.bestfit.fitsed.cat') else $
-        output=repstr(catalog,'.cat','.fitsed.cat')
+     output=repstr(catalog,'.cat','.fitsed.cat')
   endif
+  if strcmp(output,catalog) then begin
+     print,'% FITSED_READ_PARAM: error output cat and input cat have same name, shame, shame, crashing.... '
+     stop
+  endif
+  ;; set output - try to guess what might have to happen:
+  
+  if strcmp(bestoutput,'') then begin
+     bestoutput = repstr(output,'.cat','.bestfit.cat')
+     if strcmp(output,bestoutput) then begin
+        print,'% FITSED_READ_PARAM: output and best-fit output file names have same name.  Make sure your ouput catalog ends in .cat (or it will crash)'
+        stop
+     endif
+  endif
+
+
   if strcmp(lutfile,'') then $
      lutfile= 'fitsed_lut_'+repstr(catalog,'.cat','')+'_'+$
               ssp+'_'+imf+'_'+extinction_law+'.sav'
@@ -125,6 +146,7 @@ params = { ssp: ssp, $
            zmax: zmax, $
            zstep: zstep, $
            zlog: zlog, $
+           zcustom: zcustom, $
            ;; 
            extinction_law: extinction_law, $
            ebvmin: ebvmin, $
@@ -153,7 +175,8 @@ params = { ssp: ssp, $
            catalog: catdir+catalog, $
            lutfile: lutfile, $
            fitsed_cat: catdir+output, $
-           bestfit: bestfit, $
+           bestfit_cat: catdir+bestoutput, $
+;           bestfit: bestfit, $
            skipfit: skipfit, $
            outdir: outdir $
          }
