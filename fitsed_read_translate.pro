@@ -71,11 +71,6 @@ function fitsed_read_translate, catalog, fl_ind=fl_ind, err_ind=err_ind, $
   endif else begin
      message,'Cannot find translate file: ',translate
   endelse
-<<<<<<< HEAD
- 
-=======
-  
->>>>>>> 18cf32f6a1b7cf65744705872fd1ffb6c7404b43
 
   ;; capitalize everything:
   ;;header=strupcase(header)
