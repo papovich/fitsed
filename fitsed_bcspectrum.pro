@@ -45,8 +45,8 @@ else $
   fitsed_readbct,isedfile,age=bcage, spec=bcspec,color4=c4, color3=c3, $
                  chabrier=chabrier,cb07=cb07,high_res=high_res,$
                  metallicity=metalZ,endian=endian
-  bciage = (where( abs(bcage - tage) eq $
-                   min(abs(bcage - tage)) ) )[0]
+  bciage = (where( abs(bcage[1:*] - tage) eq $
+                   min(abs(bcage[1:*] - tage)) ) )[0]
   tspec = fltarr(2,n_elements(bcspec[0,*]))
   tspec[0,*] = bcspec[0,*]
   tspec[1,*] = bcspec[bciage+1,*]
@@ -69,29 +69,35 @@ else $
   
   outspectrum = tspec
 ;; dust attenuation
-  for j=0,n_elements(tspec[1,*])-1 do begin
+  if 0 then   $
+     for j=0,n_elements(tspec[1,*])-1 do begin
      outspectrum[1,j] = tspec[1,j] * 10^(-0.4 *  $
                                          call_function(extinction_law, tspec[0,j], tebv))
-
 ;calzetti(tspec[0,j]))
   endfor
+  A_lambda = call_function(extinction_law, tspec[0,*], tebv)
+  tspec[1,*] *= 10^(-0.4 * A_lambda)
+  outspectrum[1,*] = tspec[1,*]
 ;;  stop
 ;; IGM attenuation:
   temp = outspectrum
   if keyword_set(USE_MADAU) then begin
      outspectrum[1,*] = fitsed_zattenuate(temp[0,*], temp[1,*], z)
   endif   else begin
-     meiksin_zed = z > 1.5
-     outspectrum[1,*] = $
-        fitsed_zattenuate(meiksin, temp[0,*], temp[1,*], meiksin_zed)
+     meiksin_zed = z
+     if meiksin_zed gt 1.5 then $
+        outspectrum[1,*] = fitsed_zattenuate(meiksin, temp[0,*], temp[1,*], meiksin_zed) $
+     else outspec[1,*] = temp[1,*]
      ;; there is a known bug in meiksin
      ;; fitsed_zattenuate that if you feed a
      ;; redshift < 1.5, weird crap occurs.  DONT do this.
   endelse
 
   scale = (mass) * 3.839d33 / 4. / !dpi  / $
-          double(fitsed_luminosity_distance_nu(z,h=0.7,om=0.3,la=0.7))^2 / $
+          double(fitsed_luminosity_distance_nu(z,h=!h, omega=!omega, $
+                                               lambda=!lambda))^2 / $
           (3.085d24)^2  / 1d-29 / c4.mstar[bciage]
+
 
   outspectrum[1,*] = outspectrum[1,*] * outspectrum[0,*]^2 /$
                      2.998d18*scale

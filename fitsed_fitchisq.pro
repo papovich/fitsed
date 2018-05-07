@@ -487,7 +487,6 @@ PRO FITSED_FITCHISQ,  $
            endfor ;; delta
         endfor ;; metallicity
      endfor ;; tau
-
 ;; ------------------------------------------------------------
 ;; Define likelihood as PDF = exp(-chisq/2) 
 ;;

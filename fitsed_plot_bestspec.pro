@@ -22,7 +22,8 @@ pro fitsed_plot_bestspec, id, $
                           result=result, $
                           nophot=nophot, $ ; dont plot real phot
                           nomodelphot=nomodelphot, $ ; dont plot model phot
-                          noplot=noplot, $ ; if true then do not plot!
+                          noplot=noplot, $           ; if true then do not plot!
+                          ps=ps, label=label, $
                           _EXTRA=_EXTRA, $
                           stop=stop
 
@@ -48,7 +49,7 @@ pro fitsed_plot_bestspec, id, $
   ;; restore .sav file:
   restore,p.outdir+strn(long(id))+'.sav'
   print, '% Plotting best fit for object= '+strn(data[x].id)+', z= '+strn(data[x].z)
-  print, '%    Log M/Msol= '+strn(alog10(result.mass.maxpdf))
+  print, '%    Log M/Msol= '+strn(alog10(result.mass.minchisq))
   print, '%    Log age/yr= '+strn(result.log_age.minchisq)
   print, '%    tau/Gyr= '+strn(result.tau.minchisq)
   print, '%    metal= '+strn(result.metal.minchisq)
@@ -81,6 +82,18 @@ pro fitsed_plot_bestspec, id, $
      endcase
 
      case result.tau.minchisq of
+        -100 : taustr[i] = 'neg100g'
+        -10 : taustr[i] = 'neg10g'
+        -1 : taustr[i] = 'neg1g'
+        -70 : taustr[i] = 'neg70g'
+        -7 : taustr[i] = 'neg7g'
+        -0.7 : taustr[i] = 'neg700m'
+        -50 : taustr[i] = 'neg50g'
+        -5 : taustr[i] = 'neg5g'
+        -0.5 : taustr[i] = 'neg500m'
+        -30 : taustr[i] = 'neg30g'
+        -3 : taustr[i] = 'neg3g'
+        -0.3 : taustr[i] = 'neg300m'
         100 : taustr = '100g'
         10 : taustr = '10g'
         1 : taustr = '1g'
@@ -108,7 +121,8 @@ pro fitsed_plot_bestspec, id, $
      isedfile = modelHdr+'_'+metalStr+'_tau'+taustr+'yr.ised'
         
      fitsed_bcspectrum, isedfile, data[x].z, $
-                        result.mass.maxpdf, $
+                        ;result.mass.maxpdf, $
+                        result.mass.minchisq, $
                         10d^result.log_age.minchisq, $
                         result.ebv.minchisq, $
                         chabrier=chabrier, endian=endian, $
@@ -127,10 +141,10 @@ pro fitsed_plot_bestspec, id, $
   ;print, lambda
 
   ;; figure out model photometry from LUT file:
-  restore,lutfile,/skip_existing
+  restore,lutfile; ,/skip_existing
   ;; should give you lut, zed, etc... 
                                 ; need to figure out best model here!
-  zind = (where( abs(zed-data.z) eq min(abs(zed-data.z))))[0]
+  zind = (where( abs(zed-data[x].z) eq min(abs(zed-data[x].z))))[0]
   i = result.log_age.minchisq_ind
   j = result.ebv.minchisq_ind
   d =result.delta.minchisq_ind
@@ -138,7 +152,7 @@ pro fitsed_plot_bestspec, id, $
   l = result.metal.minchisq_ind
   myvec = (lut[zind,i,j,d,l,k,*])[*]
 
-mfactor = 1000d ;* 10d^(0.4*(23.9-p.AB_ZEROPOINT))               ;                             ;for uJy
+  mfactor = 1000d               ;* 10d^(0.4*(23.9-p.AB_ZEROPOINT))               ;                             ;for uJy
   myscale = result.mass.minchisq / mfactor
   model_phot = myvec*myscale
 
@@ -147,23 +161,41 @@ mfactor = 1000d ;* 10d^(0.4*(23.9-p.AB_ZEROPOINT))               ;              
      ang='!3'+string("305b) & ang='!3'+string("305b) ;; repeated just to get " level correct
 
      yrange = minmax( modelspec[1,where(modelspec[0,*] ge 1300*(1+data[x].z) and $
-                                        modelspec[0,*] le 80000)]) * [0.5,2.0]
-     plot, modelspec[0,*], modelspec[1,*], $
-           xr=[1000, 100000],/xlog,/ylog, yr=yrange, $
-           xtit='observed wavelength ['+ang+']', ytit='flux density [!4l!3Jy]', $
-           _EXTRA=_EXTRA
+                                        modelspec[0,*] le 80000)]) * [0.5,5.0]
+     if keyword_set(ps) then begin
+        plot, modelspec[0,*], modelspec[1,*], tit='!5', $
+              xr=[1000, 100000],/xlog,/ylog, yr=yrange, $
+              xtit='observed wavelength [!3'+ang+'!5]', ytit='flux density [!7l!5Jy]', $
+              _EXTRA=_EXTRA
+     endif else begin
+        plot, modelspec[0,*], modelspec[1,*], $
+              xr=[1000, 100000],/xlog,/ylog, yr=yrange, $
+              xtit='observed wavelength ['+ang+']', ytit='flux density [!4l!3Jy]', $
+              _EXTRA=_EXTRA
+     endelse
+     if not keyword_set(ps) then modelcolor='yellow' else modelcolor='black'
      if not keyword_set(nomodelphot) then $
         oplot, lambda, model_phot, $
-               color=djs_icolor('yellow'), psym=6, symsize=3
+               color=djs_icolor(modelcolor), psym=6, symsize=3
      modelphot=model_phot
      if not keyword_set(nophot) then $
         oploterror, lambda, data[x].phot, data[x].dphot, $
                     color=djs_icolor('red'), psym=6, symsize=2
+
+     if keyword_set(label) then $
+        al_legend, [    'ID '+strn(data[x].id)+', z= '+strn(data[x].z), $
+                        'Log M/Msol= '+strn(alog10(result.mass.minchisq)), $
+                        'Log age/yr= '+strn(result.log_age.minchisq), $
+                        'tau/Gyr= '+strn(result.tau.minchisq), $
+                        'metal= '+strn(result.metal.minchisq), $
+                        'E(B-V)= '+strn(result.ebv.minchisq), $
+                        'delta= '+strn(result.delta.minchisq)], charsize=1.0
+
      
      data=data[x]
      phot=data[x].phot
      dphot=data[x].dphot
-     
+
      if keyword_set(stop) then stop
      
   endif
