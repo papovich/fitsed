@@ -93,6 +93,11 @@ pro fitsed_read_param, paramfile, params=params
      
   endfor
 
+  ;; fix for zcustom not in catalog (probably shoudl do this for
+  ;; everything)
+  if total(size(zcustom)) eq 0 then zcustom=[-1]
+  if total(size(rest_lowerlimit)) eq 0 then rest_lowerlimit=0
+  
   ;; set extinction law: 
   if strcmp(extinction_law,'salmon') then begin
      print,"%% Salmon extinction law assumed"
