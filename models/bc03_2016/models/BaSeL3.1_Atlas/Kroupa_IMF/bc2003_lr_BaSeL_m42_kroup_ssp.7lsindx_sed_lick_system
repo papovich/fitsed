@@ -1,0 +1,32 @@
+#                                                     Thu Jun  9 00:55:48 2016
+#          I------------------------------------------------------------------------------------------------------------------------I
+#          I                                                                                                                        I
+#          I      BC_GALAXEV  ---  MODEL PARAMETERS:   Generic file name for this model = bc2003_lr_BaSeL_m42_kroup_ssp             I
+#          I                                                                                                                        I
+#          I      TRACKS: Padova (1994) + S. Charlot (1997). X=0.756, Y=0.24, Z=0.004                                               I
+#          I                                                                                                                        I
+#          I      S.F.R.: SSP = Zero Length Burst at t = 0                                                                          I
+#          I                                                                                                                        I
+#          I                                                                                                                        I
+#          I      I.M.F.: Power law ( 2 segments):                                                                                  I
+#          I                                                                      mass in      number                               I
+#          I                                              x   from m     to m     segment    of stars      c                        I
+#          I                                           0.30     0.10     0.50      0.2668      1.1434  4.4891E-01                   I
+#          I                                           1.30     0.50   100.00      0.7332      0.4247  2.2446E-01                   I
+#          I                                                                                                                        I
+#          I                                                           totals      1.0000      1.5681  0.6377 Mo/star               I
+#          I                                                                                                                        I
+#          I                                                                                                                        I
+#          I                                                                                                                        I
+#          I                                                                                                                        I
+#          I      LISTED: Rest frame properties                                                                                     I
+#          I                                                                                                                        I
+#          I                                                                                                                        I
+#          I                              (C) 1995-2015 G. Bruzual A. & S. Charlot - All Rights Reserved                            I
+#          I------------------------------------------------------------------------------------------------------------------------I
+#
+#    (1)       (2)     (3)     (4)     (5)     (6)     (7)      (8)       (9)       (10)     (11)     (12)     (13)     (14)    (15)
+#
+# Index_No.   WO-1:   WO-2:   WO-3:   WO-4:   GC-1:   4000A   DTT-Ca1   DTT-Ca2   DTT-Ca3  DTT-MgI    DM-04    DM-04    DM-04     BH:
+# log-age   HdeltaA HgammaA HdeltaF HgammaF D(4000)   B4_VN  CaII8498  CaII8542  CaII8662  MgI8807  H8_3889  H9_3835 H10_3798   BH-HK
+#   (yr)       (A)     (A)     (A)     (A)      .       .        (A)       (A)       (A)      (A)      (A)      (A)      (A)      (A)
