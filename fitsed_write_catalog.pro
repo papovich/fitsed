@@ -129,13 +129,13 @@ pro fitsed_write_catalog, p, data=data, paramfile=paramfile
            if total(size(result)) gt 5 then begin
               printf,lun,format=format, $
                      id[i], usez[i],  $
-                     result.tau.maxpdf, $
-                     result.metal.maxpdf, $
-                     result.log_age.maxpdf,$
-                     result.ebv.maxpdf, $
-                     result.delta.maxpdf, $
-                     alog10(result.mass.maxpdf),$
-                     alog10(result.sfr.maxpdf)
+                     result.tau.minchisq, $
+                     result.metal.minchisq, $
+                     result.log_age.minchisq,$
+                     result.ebv.minchisq, $
+                     result.delta.minchisq, $
+                     alog10(result.mass.minchisq),$
+                     alog10(result.sfr.minchisq)
            endif else begin
               printf,lun,format=format, $
                      id[i], -1,  $
