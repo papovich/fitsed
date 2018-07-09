@@ -257,7 +257,7 @@ nage = npre[1]
 if addonestep gt 0 then begin
    for i=1,addonestep do begin
       chuck=read_binary(lun,data_type=2,data_dims=1,endian=endian)
-      print,addonestep, chuck
+      ;print,addonestep, chuck
    endfor
 endif
 
