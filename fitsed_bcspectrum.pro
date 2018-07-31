@@ -87,7 +87,7 @@ else $
      meiksin_zed = z
      if meiksin_zed gt 1.5 then $
         outspectrum[1,*] = fitsed_zattenuate(meiksin, temp[0,*], temp[1,*], meiksin_zed) $
-     else outspec[1,*] = temp[1,*]
+     else outspectrum[1,*] = temp[1,*]
      ;; there is a known bug in meiksin
      ;; fitsed_zattenuate that if you feed a
      ;; redshift < 1.5, weird crap occurs.  DONT do this.
