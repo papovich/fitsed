@@ -69,7 +69,7 @@ function fitsed_read_translate, catalog, fl_ind=fl_ind, err_ind=err_ind, $
         endif
      endfor
   endif else begin
-     message,'Cannot find translate file: ',translate
+     print,'Cannot find translate file ---  '+translate+' --- but trying anyway... '
   endelse
 
   ;; capitalize everything:
@@ -89,8 +89,14 @@ function fitsed_read_translate, catalog, fl_ind=fl_ind, err_ind=err_ind, $
   err_ind = where(strmatch(header,'E*[1234567890]') eq 1,n_filt)
   filt   = strmid(header[fl_ind,i_line],1)
   
-  ; make an array with the filter names:
-  fnames= strmid(tr1[where(strmatch(strupcase(tr1),'F_*'))],2)
+                                ; make an array with the filter names:
+  if FILE_TEST(translate) then begin
+     fnames= strmid(tr1[where(strmatch(strupcase(tr1),'F_*'))],2)
+  endif else begin
+     fnames = filt
+  endelse
+  ;print,'Proceeding with filter numbers, names: '
+  ;for i=0,n_elements(fnames)-1 do print, fnames[i], filt[i]
 
   return,filt
 end
