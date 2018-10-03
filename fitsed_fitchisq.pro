@@ -41,10 +41,13 @@ function calc_mass, mass, pdf, mst=mst, $
                           abs(mass[mst]-mass_mean)^2.d*y_mass[mst]) )
   
   sty_mass = y_mass[mst]
+  print, '%%%%%%%%%%%%%%%%%%%%%% within calc_mass'
+  print, n_elements(mass)
   cumulative_pdf, mass[mst], y_mass[mst], stmass_median, $
                   stmass_lo68, stmass_hi68, stmass_lo95, stmass_hi95, mcum, $
                   mass_median, mass_lo68, mass_hi68, mass_lo95, mass_hi95, $
                   badobj2=badobj2
+  print, '%%%%%%%%%%%%%%%%%%%%%% was it this integration?'
   if total(size(badobj2)) ne 0 then if badobj2 eq 1 then badobj=1
   if stmass_lo95 lt 0 then stmass_lo95=0
   if stmass_hi95 lt 0 then stmass_hi95=0
@@ -92,7 +95,7 @@ pro getStats, rawx, y_x, log=log, $
 
   bestIndex = (where(y_x eq max(y_x)))[0]
   bestx = x[bestIndex]
-  
+  print, n_elements(x), 'within getStats'
   if n_elements(x) gt 1 then begin
      meanx = tsum(x,x*y_x)
      sigmax = sqrt(tsum(x, (x-meanx)^2*y_x))
@@ -101,6 +104,7 @@ pro getStats, rawx, y_x, log=log, $
                      medianx, lo68x, hi68x, lo95x, hi95x, badobj2=badobj2
      if total(size(badobj2)) ne 0 then $
         if badobj2 eq 1 then badobj=1
+  print, n_elements(x), '==========done'
   endif else begin
      meanx = x[0]
      sigmax = 0.0
@@ -180,29 +184,47 @@ endif else begin
    usepdf=pdf
 endelse
 
-usepdf /= tsum(usex, usepdf)
-cum = pdf*0.0d
-
-if not keyword_set(reverse) then begin
-   for i=0L,n_elements(usex)-1 do begin
-      if i eq 0 then t = indgen(2) else t=where(usex le usex[i])
-      cum[i] = tsum(usex[t], usepdf[t])
-      if i eq 0 then cum[i] /= 2.
-   endfor
-endif else begin
-   for i=n_elements(usex)-2, 0, -1 do begin
-      t=where(usex ge usex[i])
-      cum[i] = tsum(usex[t], usepdf[t])
-   endfor
-   cum = 1.0 - cum
-endelse
-
-;if cum[0] ne cum[0] then stop 
-median = interpol(usex, cum, 0.5d)
-lo68 = interpol(usex, cum, 0.15865d)
-hi68 = interpol(usex, cum, 0.84135d)
-lo95 = interpol(usex, cum, 0.02275d)
-hi95 = interpol(usex, cum, 0.97725d)
+usepdf /= tsum(usex, usepdf)                                                             
+cum = pdf*0.0d                                                                           
+; The cumulative integral for stellar mass and SFR
+; is huge and time consuming. You can achieve the same
+; calculation with better than ~0.05 dex accuracy by
+; doing the integration over a ~100x more coarse x.
+if n_elements(usex) gt 1e3 then begin
+   coarsex = [usex[0:*:100]] ; every 100th model
+   if coarsex[-1] ne usex[-1] then begin
+      ; include the last model
+      coarsex=[coarsex,usex[-1]] 
+      cum = dblarr(n_elements(pdf)/100 +1 +1)
+   endif else begin
+      cum = dblarr(n_elements(pdf)/100 +1)
+   endelse
+   integral_x = coarsex
+endif else $
+   integral_x = usex
+                                                                                         
+if not keyword_set(reverse) then begin                                                   
+   for i=0L,n_elements(integral_x)-1 do begin                                                  
+      if i eq 0 then t = indgen(2) else t=where(usex le integral_x[i])                         
+      cum[i] = tsum(usex[t], usepdf[t])                                                  
+      if i eq 0 then cum[i] /= 2.                                                        
+   endfor                                                                                
+endif else begin                                                                         
+   ; I don't think we ever reverse integrate Mass 
+   ; or SFR.. so I won't fuss with that here
+   for i=n_elements(usex)-2, 0, -1 do begin                                              
+      t=where(usex ge usex[i])                                                           
+      cum[i] = tsum(usex[t], usepdf[t])                                                  
+   endfor                                                                                
+   cum = 1.0 - cum                                                                       
+endelse                                                                                  
+                                                                                         
+;if cum[0] ne cum[0] then stop                                                           
+median = interpol(integral_x, cum, 0.5d)                                                       
+lo68 = interpol(integral_x, cum, 0.15865d)                                                     
+hi68 = interpol(integral_x, cum, 0.84135d)                                                     
+lo95 = interpol(integral_x, cum, 0.02275d)                                                     
+hi95 = interpol(integral_x, cum, 0.97725d)                                                     
 
 tmedian = (where( abs(median-usex) eq min(abs(median-usex))))[0]
 tlo68 = (where( abs(lo68-usex) eq min(abs(lo68-usex))))[0]
@@ -621,9 +643,8 @@ PRO FITSED_FITCHISQ,  $
 ; Calculate stellar mass and SFR; Treated differently.  
 ; Need to sort-list masses over all of PDF, and
 ; start to add-up total PDF until confidence regions found.
-
+     print, '%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Got to here now'
      if not keyword_set(nomass) then begin
-   
         y_mass = calc_mass(mass, pdf, mst=mst, $
                            mass_best = mass_best, bestIndex=tmass_best, $
                            mass_mean = mass_mean, meanIndex=tmass_mean, $
@@ -645,6 +666,7 @@ PRO FITSED_FITCHISQ,  $
                           lo95Index=tsfr_lo95, hi95Index=tsfr_hi95)
 
      endif ;; nomass
+     print, '%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Past mass and sfr integrations'
 
 ;;------------------------------------------------------------
 ;; calculate minimum value of chisq directly and get indexes:
