@@ -41,13 +41,10 @@ function calc_mass, mass, pdf, mst=mst, $
                           abs(mass[mst]-mass_mean)^2.d*y_mass[mst]) )
   
   sty_mass = y_mass[mst]
-  print, '%%%%%%%%%%%%%%%%%%%%%% within calc_mass'
-  print, n_elements(mass)
   cumulative_pdf, mass[mst], y_mass[mst], stmass_median, $
                   stmass_lo68, stmass_hi68, stmass_lo95, stmass_hi95, mcum, $
                   mass_median, mass_lo68, mass_hi68, mass_lo95, mass_hi95, $
                   badobj2=badobj2
-  print, '%%%%%%%%%%%%%%%%%%%%%% was it this integration?'
   if total(size(badobj2)) ne 0 then if badobj2 eq 1 then badobj=1
   if stmass_lo95 lt 0 then stmass_lo95=0
   if stmass_hi95 lt 0 then stmass_hi95=0
@@ -95,7 +92,6 @@ pro getStats, rawx, y_x, log=log, $
 
   bestIndex = (where(y_x eq max(y_x)))[0]
   bestx = x[bestIndex]
-  print, n_elements(x), 'within getStats'
   if n_elements(x) gt 1 then begin
      meanx = tsum(x,x*y_x)
      sigmax = sqrt(tsum(x, (x-meanx)^2*y_x))
@@ -104,7 +100,6 @@ pro getStats, rawx, y_x, log=log, $
                      medianx, lo68x, hi68x, lo95x, hi95x, badobj2=badobj2
      if total(size(badobj2)) ne 0 then $
         if badobj2 eq 1 then badobj=1
-  print, n_elements(x), '==========done'
   endif else begin
      meanx = x[0]
      sigmax = 0.0
@@ -430,14 +425,15 @@ PRO FITSED_FITCHISQ,  $
   endelse
 
   ;; find the index in the zed array for the galaxies' redshift
+  z_from_catalog=z
   if z lt min(zed) then begin
      ;result=0.
      ;mass=0.
      ;sfr=0.
      if z lt min(zed) then z = min(zed)
      message,$
-        ' redshift of galaxy '+strn(z)+$
-        ' is outside range of models, forcing z=z_min...',/continue
+        ' redshift of galaxy ('+strn(z_from_catalog)+')'+$
+        ' is outside range of models, forcing z=z_min, ('+strn(z)+')...',/continue
         ;' is outside range of models, skipping...',/continue
      ;return
   endif else if z gt max(zed) then begin
@@ -464,6 +460,8 @@ PRO FITSED_FITCHISQ,  $
 ;        stop
 ;     endif
 
+     ;print, "%%%% start chisq"
+     ;timestart00=systime(/seconds)
      for k=0,n_tau-1 do begin
         for l=0,n_metal-1 do begin
            for d=0l, n_delta-1 do begin
@@ -509,6 +507,9 @@ PRO FITSED_FITCHISQ,  $
            endfor ;; delta
         endfor ;; metallicity
      endfor ;; tau
+     ;print, "%% All chisq "
+     ;fitsed_checktime,timestart00
+
 ;; ------------------------------------------------------------
 ;; Define likelihood as PDF = exp(-chisq/2) 
 ;;
@@ -532,6 +533,7 @@ PRO FITSED_FITCHISQ,  $
          y_tau = [1.0]
      endelse
      
+
      ;; log Age
      getStats, log_ageArr, y_age, /log, $
                bestx = log_age_best, $
@@ -643,7 +645,6 @@ PRO FITSED_FITCHISQ,  $
 ; Calculate stellar mass and SFR; Treated differently.  
 ; Need to sort-list masses over all of PDF, and
 ; start to add-up total PDF until confidence regions found.
-     print, '%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Got to here now'
      if not keyword_set(nomass) then begin
         y_mass = calc_mass(mass, pdf, mst=mst, $
                            mass_best = mass_best, bestIndex=tmass_best, $
@@ -666,7 +667,6 @@ PRO FITSED_FITCHISQ,  $
                           lo95Index=tsfr_lo95, hi95Index=tsfr_hi95)
 
      endif ;; nomass
-     print, '%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Past mass and sfr integrations'
 
 ;;------------------------------------------------------------
 ;; calculate minimum value of chisq directly and get indexes:
