@@ -13,9 +13,11 @@ end
 
 pro fitsed, paramfile
 
-fitsed_read_param, paramfile, params=p
+version = 3.0
 
+print,'Running FITSED version = v'+strn(version)
 
+fitsed_read_param, paramfile, params=p, version=version
 
 if ~file_test(p.lutfile) then begin
    ;; generate Look Up Table (LUT): 
@@ -28,6 +30,7 @@ if ~file_test(p.lutfile) then begin
    endian='native'
 
    fitsed_generate_lut,p.lutfile, /verbose, $
+                       version=p.version, $
                        ssp=p.ssp, $
                        imf=p.imf,$
                        modeldir=p.modeldir,$
@@ -46,6 +49,9 @@ if ~file_test(p.lutfile) then begin
                        log_agemin=p.log_agemin, $
                        log_agemax=p.log_agemax, $
                        log_agestep=p.log_agestep, $
+                       sfh=p.sfh, $
+                       alpha=p.alpha, $
+                       beta=p.beta, $
                        nebular_fesc=p.nebular_fesc, $
                        nebular_continuum=0, $
                        nebular_nolya=1, $

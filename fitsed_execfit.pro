@@ -11,7 +11,16 @@ pro fitsed_execfit, p, data=data
                              name_zspec=p.name_zspec,$
                              ab_zeropoint=p.ab_zeropoint)
 
+  ;; uncomment this eventually:    delvarx(version)
   restore,p.lutfile
+  ;; comment   this out later:
+  version=p.version
+  ;; 
+  if p.version ne version then begin
+     print,'FITSED::   WHOA: Running version=',p.version, ' but LUT created using version=',version
+     print,'FITSED::   Dying...'
+     stop
+  endif
   lambda_filters= lambda
 
   rest_lowerlimit = p.rest_lowerlimit
@@ -38,10 +47,10 @@ pro fitsed_execfit, p, data=data
      print,'working on object '+strn(id)+' with z='+strn(usez)
 
      fitsed_fitchisq, phot,dphot, usez, lambda_filters, $
-                      lut, zed, log_ageArr, ebvArr, deltaArr, metalArr, tauArr, $
+                      lut, zed, log_ageArr, ebvArr, metalArr, tauArr, alphaArr, betaArr, $
                       lutMstar, lutSFR, $
                       tltuniverse=p.ageltuniverse,$
-                      pdf=pdf, mass=mass, sfr=sfr, result=result, rest_lowerlimit=rest_lowerlimit
+                      pdf=pdf, mass=mass, sfr=sfr, sfh=p.sfh, result=result, rest_lowerlimit=rest_lowerlimit
      filename = p.outsaveHeader+strn(id)+'.sav'
 ;   print, outdir+filename, phot, phot/dphot
      lutfile=p.lutfile

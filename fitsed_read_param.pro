@@ -15,12 +15,17 @@ end
 
 ;------------------------------------------------------------
 
-pro fitsed_read_param, paramfile, params=params
+pro fitsed_read_param, paramfile, params=params, version=version
 
   
   if file_test(paramfile) eq 0 then $
      message,'ERROR: parameter file, '+paramfile+', does not exist or unreadable'
 
+  if not keyword_set(version) then begin
+     version=3.0
+  endif
+  print, 'FITSED:: using version ', version
+  
   print, "Reading Parameter File: "+paramfile
 
   header=''
@@ -66,7 +71,10 @@ pro fitsed_read_param, paramfile, params=params
         strcmp(key,'NEBULAR_FESC') : nebular_fesc=fix(vars[2],type=4)
         strcmp(key,'RESTLAM_LOWERLIMIT') : rest_lowerlimit=fix(vars[2],type=4)
 
+        strcmp(key,'SFH') : sfh = repstr(vars[2],"'","")
         strcmp(key,'TAU') : tau = parseflt(vars[2],type=4)
+        strcmp(key,'ALPHA') : alpha = parseflt(vars[2],type=4)
+        strcmp(key,'BETA') : beta = parseflt(vars[2], type=4)
         strcmp(key,'METAL') : metal=parseflt(vars[2],type=4)
         strcmp(key,'LOG_AGE_MIN') : log_agemin=fix(vars[2],type=4)
         strcmp(key,'LOG_AGE_MAX') : log_agemax=fix(vars[2],type=4)
@@ -125,7 +133,7 @@ pro fitsed_read_param, paramfile, params=params
 
   if strcmp(lutfile,'') then $
      lutfile= 'fitsed_lut_'+repstr(catalog,'.cat','')+'_'+$
-              ssp+'_'+imf+'_'+extinction_law+'.sav'
+              ssp+'_'+imf+'_'+sfh+'_'+extinction_law+'.sav'
 
   defsysv, '!omega', exists=omega_exists
   if (omega_exists eq 0) then defsysv,'!omega', omega $
@@ -143,7 +151,8 @@ pro fitsed_read_param, paramfile, params=params
 
 if ~file_test(outdir,/directory) then file_mkdir,outdir
 
-params = { ssp: ssp, $
+params = { version: version,$
+           ssp: ssp, $
            imf: imf, $
            modeldir: modeldir, $
            bandpass_file: bandpass_file, $
@@ -163,7 +172,11 @@ params = { ssp: ssp, $
            log_agestep: log_agestep, $
            ageltUniverse: ageltUniverse, $
            ;;
+           sfh: sfh, $
            tau: tau, $
+           alpha: alpha, $
+           beta: beta, $
+           ; beta: [alpha, beta], $
            metal: metal, $
            ;; 
            nebular_fesc: nebular_fesc, $

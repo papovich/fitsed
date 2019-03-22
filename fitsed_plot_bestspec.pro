@@ -47,14 +47,19 @@ pro fitsed_plot_bestspec, id, $
      message,'ERROR: id= '+strn(id)+' not found in catalog: '+p.catalog
 
   ;; restore .sav file:
-  restore,p.outdir+strn(long(id))+'.sav'
+   restore,p.outdir+strn(long(id))+'.sav'
   print, '% Plotting best fit for object= '+strn(data[x].id)+', z= '+strn(data[x].z)
   print, '%    Log M/Msol= '+strn(alog10(result.mass.minchisq))
   print, '%    Log age/yr= '+strn(result.log_age.minchisq)
   print, '%    tau/Gyr= '+strn(result.tau.minchisq)
+  if strcmp(p.sfh,'dpl') then begin
+     print, '%    alpha= '+strn(result.alpha.minchisq)
+     print, '%    beta= '+strn(result.beta.minchisq)
+  endif
   print, '%    metal= '+strn(result.metal.minchisq)
   print, '%    E(B-V)= '+strn(result.ebv.minchisq)
-  print, '%    delta= '+strn(result.delta.minchisq)
+  print, '%    min Chi-squared= '+strn(result.minchisq)
+;  print, '%    delta= '+strn(result.delta.minchisq)
 
   ;; generate best-fit spectrum from result file:
   modelHdr = p.modeldir+p.imf
@@ -81,44 +86,69 @@ pro fitsed_plot_bestspec, id, $
         end
      endcase
 
-     case result.tau.minchisq of
-        -100 : taustr[i] = 'neg100g'
-        -10 : taustr[i] = 'neg10g'
-        -1 : taustr[i] = 'neg1g'
-        -70 : taustr[i] = 'neg70g'
-        -7 : taustr[i] = 'neg7g'
-        -0.7 : taustr[i] = 'neg700m'
-        -50 : taustr[i] = 'neg50g'
-        -5 : taustr[i] = 'neg5g'
-        -0.5 : taustr[i] = 'neg500m'
-        -30 : taustr[i] = 'neg30g'
-        -3 : taustr[i] = 'neg3g'
-        -0.3 : taustr[i] = 'neg300m'
-        100 : taustr = '100g'
-        10 : taustr = '10g'
-        1 : taustr = '1g'
-        0.1 : taustr = '100m'
-        0.01 : taustr = '10m'
-        0.001 : taustr = '1m'
-        2 : taustr = '2g'
-        0.2 : taustr = '200m'
-        0.02 : taustr = '20m'
-        3 : taustr = '3g'
-        0.3 : taustr = '300m'
-        0.03 : taustr = '30m'
-        5 : taustr = '5g'
-        0.5 : taustr = '500m'
-        0.05 : taustr = '50m'
-        7 : taustr = '7g'
-        0.7 : taustr = '700m'
-        0.07 : taustr = '70m'
-        else : begin
-           message, 'ERROR, result.tau.maxpdf value of '+string(result.tau.maxpdf)+' not recognized, stopping'
-        end
-     endcase
+                                ; ALPHA and BETA needed for DPL SFH
+     if strcmp(p.SFH,'dpl') then begin
+        astr=strtrim(string(format='(f3.1)', result.alpha.minchisq),2)
+        alphastr = repstr(astr, '.','p')
+        bstr=strtrim(string(format='(f3.1)', result.beta.minchisq),2)
+        betastr = repstr(bstr, '.','p')
+     endif
+     if strcmp(p.SFH,'dpl') then begin
+        tstr = strtrim(string(format='(f5.2)', result.tau.minchisq),2)
+        taustr = repstr(tstr, '.','p')
+     endif else begin
+        case result.tau.minchisq of
+           -100 : taustr = 'neg100g'
+           -10 : taustr = 'neg10g'
+           -1 : taustr = 'neg1g'
+           -70 : taustr = 'neg70g'
+           -7 : taustr = 'neg7g'
+           -0.7 : taustr = 'neg700m'
+           -50 : taustr = 'neg50g'
+           -5 : taustr = 'neg5g'
+           -0.5 : taustr = 'neg500m'
+           -30 : taustr = 'neg30g'
+           -3 : taustr = 'neg3g'
+           -0.3 : taustr[i] = 'neg300m'
+           100 : taustr = '100g'
+           10 : taustr = '10g'
+           1 : taustr = '1g'
+           0.1 : taustr = '100m'
+           0.01 : taustr = '10m'
+           0.001 : taustr = '1m'
+           2 : taustr = '2g'
+           0.2 : taustr = '200m'
+           0.02 : taustr = '20m'
+           3 : taustr = '3g'
+           0.3 : taustr = '300m'
+           0.03 : taustr = '30m'
+           5 : taustr = '5g'
+           0.5 : taustr = '500m'
+           0.05 : taustr = '50m'
+           7 : taustr = '7g'
+           0.7 : taustr = '700m'
+           0.07 : taustr = '70m'
+           else : begin
+              message, 'ERROR, result.tau.maxpdf value of '+string(result.tau.maxpdf)+' not recognized, stopping'
+           end
+        endcase
+     endelse
 
+     if strcmp(p.sfh,'exp') then $
+        isedfile = modelHdr+'_'+metalStr+'_tau'+taustr+'yr.ised' $
+     else if strcmp(p.sfh,'delayed') then $
+        isedfile = modelHdr+'_'+metalStr+'_delayedtau'+taustr+'yr.ised' $
+     else begin
+        if strcmp(p.sfh,'dpl') then begin
+           isedfile = modelHdr+'_'+metalStr+'_dpl_tau'+taustr+$
+                      '_alpha'+alphastr+'_beta'+betastr+'.ised'
+        endif else begin
+           print,'dying... no SFH specified or recognized.  sfh=',sfh
+           stop
+        endelse
+     endelse
 
-     isedfile = modelHdr+'_'+metalStr+'_tau'+taustr+'yr.ised'
+     ;isedfile = modelHdr+'_'+metalStr+'_tau'+taustr+'yr.ised'
         
      fitsed_bcspectrum, isedfile, data[x].z, $
                         ;result.mass.maxpdf, $
@@ -141,16 +171,29 @@ pro fitsed_plot_bestspec, id, $
   ;print, lambda
 
   ;; figure out model photometry from LUT file:
-  restore,lutfile; ,/skip_existing
+  restore,p.lutfile; ,/skip_existing
   ;; should give you lut, zed, etc... 
                                 ; need to figure out best model here!
-  zind = (where( abs(zed-data[x].z) eq min(abs(zed-data[x].z))))[0]
-  i = result.log_age.minchisq_ind
-  j = result.ebv.minchisq_ind
-  d =result.delta.minchisq_ind
-  k = result.tau.minchisq_ind
-  l = result.metal.minchisq_ind
-  myvec = (lut[zind,i,j,d,l,k,*])[*]
+
+  if strcmp(p.sfh,'dpl') then begin
+     zind = (where( abs(zed-data[x].z) eq min(abs(zed-data[x].z))))[0]
+     i = result.log_age.minchisq_ind
+     j = result.ebv.minchisq_ind
+;  d =result.delta.minchisq_ind
+     k = result.tau.minchisq_ind
+     l = result.metal.minchisq_ind
+     a=result.alpha.minchisq_ind
+     b=result.beta.minchisq_ind
+     myvec = (lut[zind,i,j,l,k,a,b,*])[*]
+  endif else begin
+     zind = (where( abs(zed-data[x].z) eq min(abs(zed-data[x].z))))[0]
+     i = result.log_age.minchisq_ind
+     j = result.ebv.minchisq_ind
+;  d =result.delta.minchisq_ind
+     k = result.tau.minchisq_ind
+     l = result.metal.minchisq_ind
+     myvec = (lut[zind,i,j,l,k,*])[*]
+  endelse
 
   mfactor = 1000d               ;* 10d^(0.4*(23.9-p.AB_ZEROPOINT))               ;                             ;for uJy
   myscale = result.mass.minchisq / mfactor
@@ -182,22 +225,41 @@ pro fitsed_plot_bestspec, id, $
         oploterror, lambda, data[x].phot, data[x].dphot, $
                     color=djs_icolor('red'), psym=6, symsize=2
 
-     if keyword_set(label) then $
-        al_legend, [    'ID '+strn(data[x].id)+', z= '+strn(data[x].z), $
-                        'Log M/Msol= '+strn(alog10(result.mass.minchisq)), $
-                        'Log age/yr= '+strn(result.log_age.minchisq), $
-                        'tau/Gyr= '+strn(result.tau.minchisq), $
-                        'metal= '+strn(result.metal.minchisq), $
-                        'E(B-V)= '+strn(result.ebv.minchisq), $
-                        'delta= '+strn(result.delta.minchisq)], charsize=1.0
-
+     if keyword_set(label) then begin
+        if strcmp(p.sfh,'dpl') then begin
+           al_legend, [    'ID '+strn(data[x].id)+', z= '+strn(data[x].z), $
+                           'Log M/Msol= '+strn(alog10(result.mass.minchisq)), $
+                           'Log age/yr= '+strn(result.log_age.minchisq), $
+                           'tau/Gyr= '+strn(result.tau.minchisq), $
+                           '!7a!5= '+strn(result.alpha.minchisq), $
+                           '!7b!5= '+strn(result.beta.minchisq), $
+                           'metal= '+strn(result.metal.minchisq), $
+                           'E(B-V)= '+strn(result.ebv.minchisq), $
+                           '!7v!5!s!u2!n!r!d0!n='+strn(result.minchisq)], charsize=1
+        endif else begin
+           al_legend, [    'ID '+strn(data[x].id)+', z= '+strn(data[x].z), $
+                           'Log M/Msol= '+strn(alog10(result.mass.minchisq)), $
+                           'Log age/yr= '+strn(result.log_age.minchisq), $
+                           'tau/Gyr= '+strn(result.tau.minchisq), $
+                           'metal= '+strn(result.metal.minchisq), $
+                           'E(B-V)= '+strn(result.ebv.minchisq), $
+                           '!7v!5!s!u2!n!r!d0!n='+strn(result.minchisq)], charsize=1
+                                ;'delta=
+                                ;'+strn(result.delta.minchisq)],
+                                ;charsize=1.0
+        endelse
+        
+     endif
      
      data=data[x]
      phot=data[x].phot
      dphot=data[x].dphot
-
+     
      if keyword_set(stop) then stop
      
   endif
   
+  
 end
+  
+ 

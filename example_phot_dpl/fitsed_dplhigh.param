@@ -1,4 +1,4 @@
-#... FITSED v2.0 parameter file .........................................
+#... FITSED v3.0 parameter file .........................................
 
 #--- INPUT INFORMATION
 
@@ -13,10 +13,10 @@ NAME_ZSPEC     = 'z_spec'
 
 #--- OUTPUT INFORMATION  -----------------------------------------------
 
-LUT_FILE       = 'fitsed_lut_hdfn_fs99_bc03_chab_Z0p2+0p4+Zsol_calzetti.sav' # Look up table file name (if '' then will be default)
+LUT_FILE       = 'fitsed_lut_hdfn_fs99_bc03_chab_Z0p2+0p4+Zsol_dpl_calzetti.sav' # Look up table file name (if '' then will be default)
 
 
-SAVEFILE_DIR   = 'fitsed_output/'	# director for object .sav files, needs trailing '/'	
+SAVEFILE_DIR   = 'fitsed_dplhigh/'	# director for object .sav files, needs trailing '/'	
 WRITE_SAVE     = 1			# 0=no object .sav file, 1=write it out
 SAVEFILE_HEAD  = ''			# header of each object's .sav file
 
@@ -24,7 +24,7 @@ OUTPUT_FILE	= ''			# if blank, then same as input catalog with '.fitsed.cat' ext
 
 SKIP_FIT       = 0			# 0=do fit / 1=fitting is skipped (useful for rewriting out catalog from existing fits)
 
-LIBRARY_DIR    = '/Users/papovich/Source/bc/bc03_2016/mymodels/'
+LIBRARY_DIR    = '/Users/papovich/Source/bc/bc03_2016/mymodels/dpl/'
 LIBRARY        = 'bc03'			# 'bc03' / others soon
 IMF            = 'chab'			# 'chab' / 'salp' / others... 
 EXTINCTION_LAW = 'calzetti'		# 'calzetti' / 'mw' / 'kc' / 'noll'
@@ -34,18 +34,15 @@ RESTLAM_LOWERLIMIT = 912.       # rest-frame wavelength below which you ignore p
 
 #--- DEFINE GRID PARAMETERS
 
-# ADDED:
-SFH = 'exp'
-ALPHA = [0]
-BETA = [0]
-#
-
-TAU		= [0.01,0.03,0.1,0.3,1.0,3.0,10.,100.] # Gyr, must be specific
-
+TAU		= [0.01,0.03,0.1,0.3,1.0,3.0,10.0] # Gyr, must be specific
+SFH		= 'dpl' 			       # 'exp', 'delayed',  'dpl' or ''double-power-law' . 
 LOG_AGE_MIN    = 7.0			# log [yr]
 LOG_AGE_MAX    = 10.0 			# log [yr]
 LOG_AGE_STEP   = 0.2			# log [yr]
+ALPHA	          = [0.2,0.5,1.0,1.2,1.5,1.7,2.0] # for DPL set to [0] if not used
+BETA		  = [0.2,0.5,1.0,1.2,1.5,1.7,2.0] # for DPL set to [0] if not used
 AGELTUNIVERSE  = 1			# 0 / 1 = restrict age to be less than age of Univese at given z
+# The configuration here is 35M for the .sav file
 
 Z_MIN          = 0.01                   # Cannot be 0.  
 Z_MAX          = 6.00   

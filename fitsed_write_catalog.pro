@@ -47,7 +47,7 @@ pro fitsed_write_catalog, p, data=data, paramfile=paramfile
      if ~bestfit then openw,lun, /get_lun,fitsed_cat $
      else openw, lun, /get_lun, bestfit_cat
      
-     printf,lun, '# FITSED v2.0 output file'
+     printf,lun, '# FITSED v'+string(format='(f3.1)', p.version)+' output file'
      printf,lun, '#'
      if keyword_set(paramfile) then begin
         n=file_lines(paramfile)
@@ -63,36 +63,77 @@ pro fitsed_write_catalog, p, data=data, paramfile=paramfile
   ; printf,lun, '# all parameters will be written here'
   ;if not keyword_set(bestfit) then begin
      if ~bestfit then begin
-        columns = ['id', 'z', 'tau', 'tau_l68', 'tau_h68', $
-                   'metal', 'met_l68', 'met_h68', $
-                   'lg_age', 'lg_a_l68', 'lg_a_h68', $
-                   'ebv', 'ebv_l68', 'ebv_h68', $
-                   'delta', 'del_l68', 'del_h68', $
-                   'lg_mass', 'lg_mass_l68', 'lg_mass_h68', $
-                   'lg_sfr', 'lg_sfr_l68', 'lg_sfr_h68']
-        myformat=['a6', 'a5', 'a7','a9','a9', $ ; id, z, tau
-                  'a7', 'a9', 'a9', $           ; metal
-                  'a7', 'a9', 'a9',$            ; lg_age
-                  'a6','a8','a8', $             ; ebv
-                  'a6','a8','a8', $             ; delta
-                  'a8','a12','a12', $           ; lg_mass
-                  'a7','a11','a11']             ; SFR
+        if strcmp(p.sfh,'dpl') then begin
+           columns = ['id', 'z', 'tau', 'tau_l68', 'tau_h68', $
+                      'alpha', 'alp_l68','alp_h68', $
+                      'beta', 'bet_l68','bet_h68', $
+                      'metal', 'met_l68', 'met_h68', $
+                      'lg_age', 'lg_a_l68', 'lg_a_h68', $
+                      'ebv', 'ebv_l68', 'ebv_h68', $
+;                   'delta', 'del_l68', 'del_h68', $
+                      'lg_mass', 'lg_mass_l68', 'lg_mass_h68', $
+                      'lg_sfr', 'lg_sfr_l68', 'lg_sfr_h68']
+           myformat=['a6', 'a5', 'a7','a9','a9', $ ; id, z, tau
+                     'a7', 'a9', 'a9', $           ; alpha
+                     'a6', 'a8', 'a8', $           ; beta
+                     'a7', 'a9', 'a9', $           ; metal
+                     'a7', 'a9', 'a9',$            ; lg_age
+                     'a6','a8','a8', $             ; ebv
+                                ;                 'a6','a8','a8', $             ; delta
+                     'a8','a12','a12', $ ; lg_mass
+                     'a7','a11','a11']   ; SFR
+        endif else  begin
+           columns = ['id', 'z', 'tau', 'tau_l68', 'tau_h68', $
+                      'metal', 'met_l68', 'met_h68', $
+                      'lg_age', 'lg_a_l68', 'lg_a_h68', $
+                      'ebv', 'ebv_l68', 'ebv_h68', $
+;                   'delta', 'del_l68', 'del_h68', $
+                      'lg_mass', 'lg_mass_l68', 'lg_mass_h68', $
+                      'lg_sfr', 'lg_sfr_l68', 'lg_sfr_h68']
+           myformat=['a6', 'a5', 'a7','a9','a9', $ ; id, z, tau
+                     'a7', 'a9', 'a9', $           ; metal
+                     'a7', 'a9', 'a9',$            ; lg_age
+                     'a6','a8','a8', $             ; ebv
+                                ;                 'a6','a8','a8', $             ; delta
+                     'a8','a12','a12', $ ; lg_mass
+                     'a7','a11','a11']   ; SFR
+        endelse
      endif else begin
-        columns = ['id', 'z', 'tau', $
-                   'metal', $
-                   'lg_age', $
-                   'ebv', $
-                   'delta', $
-                   'lg_mass', $
-                   'lg_sfr']
-        myformat=['a6', 'a5', 'a8', $ ; id, z, tau
-                  'a9',  $            ; metal
-                  'a8', $             ; lg_age
-                  'a8', $             ; ebv
-                  'a8', $             ; delta
-                  'a9', $             ; lg_mass
-                  'a9']               ; SFR
-     endelse     
+        if strcmp(p.sfh,'dpl') then begin
+           columns = ['id', 'z', 'tau', $
+                      'alpha', 'beta', $
+                      'metal', $
+                      'lg_age', $
+                      'ebv', $
+                                ;                  'delta', $
+                      'lg_mass', $
+                      'lg_sfr']
+           myformat=['a6', 'a5', 'a8', $ ; id, z, tau
+                     'a9','a8', $        ;  alpha, beta
+                     'a9',  $            ; metal
+                     'a8', $             ; lg_age
+                     'a8', $             ; ebv
+                                ;                'a8', $             ; delta
+                     'a9', $    ; lg_mass
+                     'a9']      ; SFR
+        endif else begin
+           columns = ['id', 'z', 'tau', $
+                      'metal', $
+                      'lg_age', $
+                      'ebv', $
+                                ;                  'delta', $
+                      'lg_mass', $
+                      'lg_sfr']
+           myformat=['a6', 'a5', 'a8', $ ; id, z, tau
+                     'a9',  $            ; metal
+                     'a8', $             ; lg_age
+                     'a8', $             ; ebv
+                                ;                'a8', $             ; delta
+                     'a9', $    ; lg_mass
+                     'a9']      ; SFR
+        endelse 
+     endelse
+     
      colstr = ''
      for i=0,n_elements(columns)-1 do colstr = colstr+string(format='('+myformat[i]+',x)',columns[i])
 ; FIX THE ABOVE
@@ -100,9 +141,15 @@ pro fitsed_write_catalog, p, data=data, paramfile=paramfile
      
      ;;if not keyword_set(bestfit) then begin
      if ~bestfit then begin
-        format = '(i8,x,f6.3,x, 3(f7.3,x), 3(f7.4,x), 3(f7.2,x), 3(f6.2,x), 3(f7.2,x), 3(f8.2,x), 3(f9.3,x))'
+        if strcmp(p.sfh,'dpl') then $
+           format = '(i8,x,f6.3,x, 3(f7.3,x), 3(F4.2, x), 3(F4.2,x), 3(f7.4,x), 3(f7.2,x), 3(f6.2,x), 3(f8.2,x), 3(f9.3,x))' $
+        else $
+           format = '(i8,x,f6.3,x, 3(f7.3,x), 3(f7.4,x), 3(f7.2,x), 3(f6.2,x),3(f8.2,x), 3(f9.3,x))'
      endif else begin
-        format = '(i8,x,f6.3,x, 1(f7.3,x), 1(f7.4,x), 1(f7.2,x), 1(f6.2,x), 1(f7.2,x), 1(f8.2,x), 1(f9.3,x))'
+        if strcmp(p.sfh,'dpl') then $
+           format = '(i8,x,f6.3,x, 1(f7.3,x), 1(F4.2,x), 1(F4.2,x), 1(f7.4,x), 1(f7.2,x), 1(f6.2,x), 1(f8.2,x), 1(f9.3,x))' $
+        else $
+           format = '(i8,x,f6.3,x, 1(f7.3,x), 1(f7.4,x), 1(f7.2,x), 1(f6.2,x), 1(f8.2,x), 1(f9.3,x))'
      endelse
      
      for i=0,n_elements(id)-1 do begin
@@ -111,35 +158,75 @@ pro fitsed_write_catalog, p, data=data, paramfile=paramfile
         
         if ~bestfit then begin
            if total(size(result)) gt 5 then begin
-              printf,lun,format=format, $
-                     id[i], usez[i],  $
-                     result.tau.median, result.tau.lo68, result.tau.hi68, $
-                     result.metal.median, result.metal.lo68, result.metal.hi68, $
-                     result.log_age.median,result.log_age.lo68, result.log_age.hi68, $
-                     result.ebv.median, result.ebv.lo68, result.ebv.hi68, $
-                     result.delta.median, result.delta.lo68, result.delta.hi68, $
-                     alog10(result.mass.median), alog10( result.mass.lo68), alog10(result.mass.hi68), $
-                     alog10(result.sfr.median), alog10( result.sfr.lo68), alog10(result.sfr.hi68)
+              if strcmp(p.sfh,'dpl') then begin
+                 printf,lun,format=format, $
+                        id[i], usez[i],  $
+                        result.tau.median, result.tau.lo68, result.tau.hi68, $
+                        result.alpha.median, result.alpha.lo68, result.alpha.hi68, $
+                        result.beta.median, result.beta.lo68, result.beta.hi68, $
+                        result.metal.median, result.metal.lo68, result.metal.hi68, $
+                        result.log_age.median,result.log_age.lo68, result.log_age.hi68, $
+                        result.ebv.median, result.ebv.lo68, result.ebv.hi68, $
+;                     result.delta.median, result.delta.lo68, result.delta.hi68, $
+                        alog10(result.mass.median), alog10( result.mass.lo68), alog10(result.mass.hi68), $
+                        alog10(result.sfr.median), alog10( result.sfr.lo68), alog10(result.sfr.hi68)
+              endif else begin
+                 printf,lun,format=format, $
+                        id[i], usez[i],  $
+                        result.tau.median, result.tau.lo68, result.tau.hi68, $
+                        result.metal.median, result.metal.lo68, result.metal.hi68, $
+                        result.log_age.median,result.log_age.lo68, result.log_age.hi68, $
+                        result.ebv.median, result.ebv.lo68, result.ebv.hi68, $
+;                     result.delta.median, result.delta.lo68, result.delta.hi68, $
+                        alog10(result.mass.median), alog10( result.mass.lo68), alog10(result.mass.hi68), $
+                        alog10(result.sfr.median), alog10( result.sfr.lo68), alog10(result.sfr.hi68)
+              endelse 
            endif else begin
-              printf,lun,format=format, $
-                     id[i], -1,  $
-                     replicate(0.0,21)
+              if strcmp(p.sfh,'dpl') then begin
+                 printf,lun,format=format, $
+                        id[i], -1,  $
+                        replicate(0.0,24)
+              endif else begin
+                 printf,lun,format=format, $
+                        id[i], -1,  $
+                        replicate(0.0,18)
+              endelse
            endelse     
         endif else begin
            if total(size(result)) gt 5 then begin
-              printf,lun,format=format, $
-                     id[i], usez[i],  $
-                     result.tau.minchisq, $
-                     result.metal.minchisq, $
-                     result.log_age.minchisq,$
-                     result.ebv.minchisq, $
-                     result.delta.minchisq, $
-                     alog10(result.mass.minchisq),$
-                     alog10(result.sfr.minchisq)
+              if strcmp(p.sfh,'dpl') then begin
+                 printf,lun,format=format, $
+                        id[i], usez[i],  $
+                        result.tau.minchisq, $
+                        result.alpha.minchisq, $
+                        result.beta.minchisq, $
+                        result.metal.minchisq, $
+                        result.log_age.minchisq,$
+                        result.ebv.minchisq, $
+                                ;                    result.delta.minchisq, $
+                        alog10(result.mass.minchisq),$
+                        alog10(result.sfr.minchisq)
+              endif else begin
+                 printf,lun,format=format, $
+                        id[i], usez[i],  $
+                        result.tau.minchisq, $
+                        result.metal.minchisq, $
+                        result.log_age.minchisq,$
+                        result.ebv.minchisq, $
+                                ;                    result.delta.minchisq, $
+                        alog10(result.mass.minchisq),$
+                        alog10(result.sfr.minchisq)
+              endelse
            endif else begin
-              printf,lun,format=format, $
-                     id[i], -1,  $
-                     replicate(0.0,7)
+              if strcmp(p.sfh,'dpl') then begin
+                 printf,lun,format=format, $
+                        id[i], -1,  $
+                        replicate(0.0,8)
+              endif else begin
+                 printf,lun,format=format, $
+                        id[i], -1,  $
+                        replicate(0.0,6)
+              endelse
            endelse     
         endelse
 
