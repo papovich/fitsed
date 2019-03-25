@@ -13,6 +13,7 @@
 ; solar mass.   For flux densities in nJy, "scale" is just mass now....
 ; revised Aug 2012 to correct PDF analysis using TSUM instead of TOTAL
 ; MAJOR REWRITE 2016 August.  Cleaning up, added delta, etc.
+; UPDATE 2019 February.  Removed delta.  Added alpha/beta for SFH=dpl.  
 
 ;------------------------------------------------------------
 ;------------------------------------------------------------
@@ -187,14 +188,16 @@ cum = pdf*0.0d
 ; doing the integration over a ~100x more coarse x.
 if n_elements(usex) gt 1e3 then begin
    coarsex = [usex[0:*:100]] ; every 100th model
-   if coarsex[-1] ne usex[-1] then begin
-      ; include the last model
+   if coarsex[-1] ne usex[-1] then  begin    ; include the last model
       coarsex=[coarsex,usex[-1]] 
-      cum = dblarr(n_elements(pdf)/100 +1 +1)
-   endif else begin
-      cum = dblarr(n_elements(pdf)/100 +1)
-   endelse
+      ;;cum = dblarr(n_elements(pdf)/100 +1 +1)
+   endif ;; else begin
+      ;;cum = dblarr(n_elements(pdf)/100 +1)
+   ;;endelse
+   cum = dblarr(n_elements(coarsex)) ;; CJP added this to force cum to have the same number of elements as coarsex... a bug was showing up. 
    integral_x = coarsex
+   ;; CHECK if integral_x and cum have the same size.  Needed for
+   ;; intepol below.
 endif else $
    integral_x = usex
                                                                                          
@@ -278,14 +281,14 @@ end
 ;; If calculating errors (almost always are) then derive cummulative
 ;; distributions.
 
-function y_p, x, pdf, i_x, a=a, b=b, c=c, d=d, norm=norm
+function y_p, x, pdf, i_x, a=a, b=b, c=c, norm=norm
 ;; this function takes the PDF, and integrates over a, b, c, and d to
 ;; get y(x), the posterior for x (marginalized over the other
 ;; parameters).
 ;;
 ;; a = array for the first variable, 
 ;; b= array for the second variable
-;; c, d= third, fourth variable
+;; c= third
 ;; i_x is assumed to be dimension of the variable for x.
 ;; 
 ;; Example:
@@ -299,43 +302,115 @@ function y_p, x, pdf, i_x, a=a, b=b, c=c, d=d, norm=norm
 
   sz = size(pdf,/dim)
   szx = sz[i_x]
-  indexes = bindgen(5)
+  indexes = bindgen(4)
+  indexes=indexes[where(i_x ne indexes)]
+
+  y_x = fltarr(szx)
+  tmpA = fltarr(szx, $
+                n_elements(b),$
+                n_elements(c))
+  tmpB = fltarr(szx, $
+                n_elements(c))
+;  tmpC = fltarr(szx, $
+;                n_elements(d))
+
+  for i=0,n_elements(y_x)-1 do begin
+;     for l=0,n_elements(d)-1 do begin
+     for k=0,n_elements(c)-1 do begin
+        for j=0,n_elements(b)-1 do begin
+           case i_x of  
+              0 : tmpA[i,j,k] = mytsum(a,pdf[i,*,j,k])
+              1 : tmpA[i,j,k] = mytsum(a,pdf[*,i,j,k])
+              2 : tmpA[i,j,k] = mytsum(a,pdf[*,j,i,k])
+              3 : tmpA[i,j,k] = mytsum(a,pdf[*,j,k,i])
+;              4 : tmpA[i,j,k] = mytsum(a,pdf[*,j,k,i])
+              else : begin
+                 message, 'i_x must be 0...3, cannot be '+strn(i_x)
+                 stop
+              end
+           endcase
+        endfor
+        tmpB[i,k] = mytsum(b,tmpA[i,*,k])
+     endfor
+     y_x[i] = mytsum(c,tmpB[i,*])
+  endfor
+
+  norm = mytsum(x,y_x)
+  y_x /= norm
+
+  return, y_x
+
+END
+
+function y_p6, x, pdf, i_x, a=a, b=b, c=c, d=d, e=e, norm=norm
+;; Same as y_p, but allows 5 variables (age, ebv, metal, tau, alpha,
+;; beta) this function takes the PDF, and integrates over a, b, c, and d to
+;; get y(x), the posterior for x (marginalized over the other
+;; parameters).
+;;
+;; a = array for the first variable, 
+;; b= array for the second variable
+;; c, d,e = third, fourth fifth variable
+;; i_x is assumed to be dimension of the variable for x.
+;; 
+;; Example:
+;; if x is the 0th dimension, then i_x = 0 and pdf would have the form:
+;; pdf[*, n_elements(a), n_elements(b), n_elements(c), n_elements(d)]
+;;
+;; if x is the 1st dimension, then i_x = 1 and the pdf would have the form:
+;; pdf[n_elements(a), *, n_elements(b), n_elements(c), n_elements(d)]
+;; 
+;; etc... 
+
+  sz = size(pdf,/dim)
+  szx = sz[i_x]
+  indexes = bindgen(6)
   indexes=indexes[where(i_x ne indexes)]
 
   y_x = fltarr(szx)
   tmpA = fltarr(szx, $
                 n_elements(b),$
                 n_elements(c),$
-                n_elements(d))
+                n_elements(d),$
+                n_elements(e))
   tmpB = fltarr(szx, $
                 n_elements(c),$
-                n_elements(d))
+                n_elements(d),$
+                n_elements(e))
   tmpC = fltarr(szx, $
-                n_elements(d))
+                n_elements(d),$
+                n_elements(e))
+  tmpD = fltarr(szx, $
+                n_elements(e))
 
   for i=0,n_elements(y_x)-1 do begin
-     for l=0,n_elements(d)-1 do begin
-        for k=0,n_elements(c)-1 do begin
-           for j=0,n_elements(b)-1 do begin
-              case i_x of  
-                 0 : tmpA[i,j,k,l] = mytsum(a,pdf[i,*,j,k,l])
-                 1 : tmpA[i,j,k,l] = mytsum(a,pdf[*,i,j,k,l])
-                 2 : tmpA[i,j,k,l] = mytsum(a,pdf[*,j,i,k,l])
-                 3 : tmpA[i,j,k,l] = mytsum(a,pdf[*,j,k,i,l])
-                 4 : tmpA[i,j,k,l] = mytsum(a,pdf[*,j,k,l,i])
-                 else : begin
-                    message, 'i_x must be 0...4, cannot be '+strn(i_x)
-                    stop
-                 end
-              endcase
+     for m=0,n_elements(e)-1 do begin
+        for l=0,n_elements(d)-1 do begin
+           for k=0,n_elements(c)-1 do begin
+              for j=0,n_elements(b)-1 do begin
+                 
+                 case i_x of  
+                    0 : tmpA[i,j,k,l,m] = mytsum(a,pdf[i,*,j,k,l,m])
+                    1 : tmpA[i,j,k,l,m] = mytsum(a,pdf[*,i,j,k,l,m])
+                    2 : tmpA[i,j,k,l,m] = mytsum(a,pdf[*,j,i,k,l,m])
+                    3 : tmpA[i,j,k,l,m] = mytsum(a,pdf[*,j,k,i,l,m])
+                    4 : tmpA[i,j,k,l,m] = mytsum(a,pdf[*,j,k,l,i,m])
+                    5 : tmpA[i,j,k,l,m] = mytsum(a,pdf[*,j,k,l,m,i])
+                    else : begin
+                       message, 'i_x must be 0...5, cannot be '+strn(i_x)
+                       stop
+                    end
+                 endcase
+              endfor
+              tmpB[i,k,l,m] = mytsum(b,tmpA[i,*,k,l,m])
            endfor
-           tmpB[i,k,l] = mytsum(b,tmpA[i,*,k,l])
+           tmpC[i,l,m] = mytsum(c,tmpB[i,*,l,m])
         endfor
-        tmpC[i,l] = mytsum(c,tmpB[i,*,l])
+        tmpD[i,m] = mytsum(d,tmpC[i,*,m])
      endfor
-     y_x[i] = mytsum(d,tmpC[i,*])
+     y_x[i] = mytsum(e,tmpD[i,*])
   endfor
-
+  
   norm = mytsum(x,y_x)
   y_x /= norm
 
@@ -366,7 +441,7 @@ PRO FITSED_FITCHISQ,  $
    lambda_filters,$
    ;;
    ;; the following are from generate_lut in the same order as in lut[...]
-   lut, zed, log_ageArr, ebvArr, deltaArr, metalArr, tauArr, lutMstar, lutSFR, $
+   lut, zed, log_ageArr, ebvArr, metalArr, tauArr, alphaArr, betaArr, lutMstar, lutSFR, $
    nomass=nomass, $ ;; if set it skips the mass derivation; BS says this makes the code go much faster
    ;;
    ;; these control the code: 
@@ -376,6 +451,7 @@ PRO FITSED_FITCHISQ,  $
 ;   monte_carlo=monte_carlo, $
 ;   run_monte_carlo=run_monte_carlo,$
    verbose=verbose, $
+   sfh=sfh, $
    tltuniverse=tltuniverse, $
    badobj=badobj, $
    agelimit=agelimit, $ ; can be used to limit ages
@@ -387,6 +463,8 @@ PRO FITSED_FITCHISQ,  $
    mass=mass, $
    sfr=sfr, result=result 
 
+; ------------------------------------------------------------
+  
   if tauArr[0] lt 0.0 then tauArr = abs(tauArr)
   
   if not keyword_set(agelimit) then agelimit=0.0
@@ -401,27 +479,51 @@ PRO FITSED_FITCHISQ,  $
   if keyword_set(mfactor) then mfactor=mfactor $
   else mfactor=1000.d
 
-  sz = size(lut,/dim)
-  n_zed = sz[0]
-  n_age = sz[1]
-  n_ebv = sz[2]
-  n_delta = sz[3]
-  n_metal = sz[4]
-  n_tau = sz[5]
-  n_filters = sz[6]
-
-  if n_tau eq 1 then begin
-      chisq = dblarr(n_age, n_ebv, n_delta, n_metal)*0.0 + 1d62
-      scale = dblarr(n_age, n_ebv, n_delta, n_metal)
-      pdf = dblarr(n_age, n_ebv, n_delta, n_metal)
-      mass = dblarr(n_age, n_ebv, n_delta, n_metal)
-      sfr =  dblarr(n_age, n_ebv, n_delta, n_metal)
+  if strcmp(sfh,'dpl') then begin
+     sz = size(lut,/dim)
+     n_zed = sz[0]
+     n_age = sz[1]
+     n_ebv = sz[2]
+;  n_delta = sz[3]
+     n_metal = sz[3]
+     n_tau = sz[4]
+     n_alpha = sz[5]
+     n_beta = sz[6]
+     n_filters = sz[7]
   endif else begin
-      chisq = dblarr(n_age, n_ebv, n_delta, n_metal, n_tau)*0.0 + 1d62
-      scale = dblarr(n_age, n_ebv, n_delta, n_metal, n_tau)
-      pdf = dblarr(n_age, n_ebv, n_delta, n_metal, n_tau)
-      mass = dblarr(n_age, n_ebv, n_delta, n_metal, n_tau)
-      sfr =  dblarr(n_age, n_ebv, n_delta, n_metal, n_tau)
+     sz = size(lut,/dim)
+     n_zed = sz[0]
+     n_age = sz[1]
+     n_ebv = sz[2]
+;  n_delta = sz[3]
+     n_metal = sz[3]
+     n_tau = sz[4]
+     n_filters = sz[5]
+     n_alpha=1
+     n_beta=1
+  endelse
+  
+
+  if n_tau+n_alpha+n_beta eq 1 then begin
+      chisq = dblarr(n_age, n_ebv, n_metal)*0.0 + 1d62
+      scale = dblarr(n_age, n_ebv, n_metal)
+      pdf = dblarr(n_age, n_ebv, n_metal)
+      mass = dblarr(n_age, n_ebv, n_metal)
+      sfr =  dblarr(n_age, n_ebv, n_metal)
+   endif else begin
+      if strcmp(sfh,'dpl') then begin
+         chisq = dblarr(n_age, n_ebv, n_metal, n_tau,n_alpha,n_beta)*0.0 + 1d62
+         scale = dblarr(n_age, n_ebv, n_metal, n_tau,n_alpha,n_beta)
+         pdf = dblarr(n_age, n_ebv, n_metal, n_tau,n_alpha,n_beta)
+         mass = dblarr(n_age, n_ebv, n_metal, n_tau,n_alpha,n_beta)
+         sfr =  dblarr(n_age, n_ebv, n_metal, n_tau,n_alpha,n_beta)
+      endif else begin
+         chisq = dblarr(n_age, n_ebv, n_metal, n_tau)*0.0 + 1d62
+         scale = dblarr(n_age, n_ebv, n_metal, n_tau)
+         pdf = dblarr(n_age, n_ebv,  n_metal, n_tau)
+         mass = dblarr(n_age, n_ebv, n_metal, n_tau)
+         sfr =  dblarr(n_age, n_ebv, n_metal, n_tau)
+      endelse         
   endelse
 
   ;; find the index in the zed array for the galaxies' redshift
@@ -462,53 +564,75 @@ PRO FITSED_FITCHISQ,  $
 
      ;print, "%%%% start chisq"
      ;timestart00=systime(/seconds)
-     for k=0,n_tau-1 do begin
-        for l=0,n_metal-1 do begin
-           for d=0l, n_delta-1 do begin
-              for j=0,n_ebv-1 do begin
-                 for i=0,n_age-1 do begin
-                    myvec[*] = lut[zind,i,j,d,l,k,*]
-                    sel_fin=where( finite(phot) eq 1 and finite(dphot) eq 1 and $
-		                   lambda_filters gt rest_lowerlimit and $ ; BWS addition - ignore bands at low lam_rest
-				   finite(myvec) eq 1 and $    ; ignore bad LUT filters, just in case
-                                   phot gt -98 and dphot gt -98)
+     for b=0,n_beta-1 do begin
+        for a=0,n_alpha-1 do begin
+           for k=0,n_tau-1 do begin
+              for l=0,n_metal-1 do begin
+;                 for d=0l, n_delta-1 do begin
+                 for j=0,n_ebv-1 do begin
+                    for i=0,n_age-1 do begin
+                       if strcmp(sfh,'dpl') then begin
+                          myvec[*] = lut[zind,i,j,l,k,a,b,*]
+                       endif else begin
+                          myvec[*] = lut[zind,i,j,l,k,*]
+                       endelse
 
-                    if n_elements(sel_fin) ge 2 then begin
-                       scale[i,j,d,l,k] = $
-                          svdfit( myvec[sel_fin], phot[sel_fin], 1, $
-                                  a=ta, chisq=xtchisq, $
-                                  measure_errors=dphot[sel_fin], $
-                                  sigma=tsigma, $
-                                  yfit=tyfit,/double, funct='fitsed_fitfunc')
-
-                       ;;----------------------------------------
+                       sel_fin=where( finite(phot) eq 1 and finite(dphot) eq 1 and $
+                                      lambda_filters gt rest_lowerlimit and $ ; BWS addition - ignore bands at low lam_rest
+                                      finite(myvec) eq 1 and $ ; ignore bad LUT filters, just in case
+                                      phot gt -98 and dphot gt -98)
+                    
+                       if n_elements(sel_fin) ge 2 then begin
+                          tscale = $
+                             svdfit( myvec[sel_fin], phot[sel_fin], 1, $
+                                     a=ta, chisq=xtchisq, $
+                                     measure_errors=dphot[sel_fin], $
+                                     sigma=tsigma, $
+                                     yfit=tyfit,/double, funct='fitsed_fitfunc')
+                          tscale=tscale[0]
+                          ;;----------------------------------------
                        ;; if the age is greater than the age of the universe, 
-                       ;; then max out the chisq (zero out the pdf)
-                       if 10d^log_ageArr[i] le lbt and $
-                          10d^log_ageArr[i] ge agelimit then $
-                          chisq[i,j,d,l,k] = $
-                          total( (myvec[sel_fin]*scale[i,j,d,l,k] - $
-                                  phot[sel_fin])^2 / $
-                                 dphot[sel_fin]^2 ) 
-                    endif  else begin ;; there are <= 2 good photometry points:
-                       scale[i,j,d,l,k] = 0.0000d
-                       ;; leave chisq, etc, alone
-                    endelse
-               
+                          ;; then max out the chisq (zero out the pdf)
+                          if 10d^log_ageArr[i] le lbt and $
+                             10d^log_ageArr[i] ge agelimit then $
+                                tchisq =total( (myvec[sel_fin]*tscale - $
+                                                phot[sel_fin])^2 / $
+                                               dphot[sel_fin]^2 ) 
+                          
+;                              chisq[i,j,d,l,k] = $
+;                              total( (myvec[sel_fin]*scale[i,j,d,l,k] - $
+;                                      phot[sel_fin])^2 / $
+;                                     dphot[sel_fin]^2 ) 
+                       endif  else begin ;; there are <= 2 good photometry points:
+                          tscale=0.0d    ; scale[i,j,d,l,k] = 0.0000d
+                          ;; leave chisq, etc, alone
+                       endelse
+                    
                     ;;----------------------------------------
                     ;; calculate the stellar mass and star formation rate
 
-                    mass[i,j,d,l,k] = scale[i,j,d,l,k]*mfactor
-                    sfr[i,j,d,l,k] = lutSFR[i,l,k] / $
-                                     lutMstar[i,l,k] * mass[i,j,d,l,k]
-               
-                 endfor  ;; age
-              endfor ;; ebv
-           endfor ;; delta
-        endfor ;; metallicity
-     endfor ;; tau
-     ;print, "%% All chisq "
-     ;fitsed_checktime,timestart00
+                       if strcmp(sfh,'dpl') then begin
+                          chisq[i,j,l,k,a,b] = tchisq
+                          scale[i,j,l,k,a,b] = tscale
+                          mass[i,j,l,k,a,b] = scale[i,j,l,k,a,b]*mfactor
+                          sfr[i,j,l,k,a,b] = lutSFR[i,l,k,a,b] / $
+                                               lutMstar[i,l,k,a,b] * mass[i,j,l,k,a,b]
+                       endif else begin
+                          chisq[i,j,l,k] = tchisq
+                          scale[i,j,l,k] = tscale
+                          mass[i,j,l,k] = scale[i,j,l,k]*mfactor
+                          sfr[i,j,l,k] = lutSFR[i,l,k] / $
+                                           lutMstar[i,l,k] * mass[i,j,l,k]
+                       endelse
+                    
+                    endfor  ;; age
+                 endfor;; ebv
+              endfor   ;; metallicity
+           endfor      ;; tau
+        endfor         ;; alpha
+     endfor            ;; beta
+   ;print, "%% All chisq "
+   ;fitsed_checktime,timestart00
 
 ;; ------------------------------------------------------------
 ;; Define likelihood as PDF = exp(-chisq/2) 
@@ -516,23 +640,44 @@ PRO FITSED_FITCHISQ,  $
 ;; TODO:  allow for additional priors here.
 
      minchisq  = min(chisq)
-     pdf = exp( - (chisq ) / 2.0 )
+     pdf = exp( - (chisq - min(chisq)) / 2.0 )
+     ;minchisq  = min(chisq)
+     ;pdf = exp( - (chisq) / 2.0 )
 ;; ===============================
-;; Integrate over everything: 
-     y_age = y_p(10d^log_ageArr, pdf, 0, a=ebvArr, b=deltaArr, c=metalArr, d=tauArr, $
-                 norm=norm)
-;apply the normalization:
-     pdf /= norm
+;; Integrate over everything:
 
-     y_ebv = y_p(ebvArr, pdf, 1, a=10d^log_ageArr, b=deltaArr, c=metalArr, d=tauArr)
-     y_delta = y_p(deltaArr, pdf, 2, a=10d^log_ageArr, b=ebvArr, c=metalArr, d=tauArr)
-     y_metal = y_p(metalArr, pdf, 3, a=10d^log_ageArr, b=ebvArr, c=deltaArr, d=tauArr)
-     if n_tau gt 1 then begin
-         y_tau = y_p(tauArr, pdf, 4, a=10d^log_ageArr, b=ebvArr, c=deltaArr, d=metalArr)
+     if strcmp(sfh,'dpl') then begin
+        y_age = y_p6(10d^log_ageArr, pdf, 0, a=ebvArr, b=metalArr, c=tauArr, d=alphaArr, e=betaArr,$
+                     norm=norm)
+;apply the normalization:
+        pdf /= norm
+        
+        y_ebv = y_p6(ebvArr, pdf, 1, a=10d^log_ageArr, b=metalArr, c=tauArr, d=alphaArr, e=betaArr)
+        y_metal = y_p6(metalArr, pdf, 2, a=10d^log_ageArr, b=ebvArr, c=tauArr, d=alphaArr, e=betaArr)
+        if n_tau gt 1 then $
+           y_tau = y_p6(tauArr, pdf, 3, a=10d^log_ageArr, b=ebvArr, c=metalArr, d=AlphaArr, e=betaArr) $
+        else   y_tau = [1.0]
+        if n_alpha gt 1 then $
+           y_alpha = y_p6(alphaArr, pdf, 4, a=10d^log_ageArr, b=ebvArr, c=metalArr, d=tauArr, e=betaArr) $
+        else y_alpha = [1.0]
+        if n_beta gt 1 then $
+           y_beta = y_p6(betaArr, pdf, 5, a=10d^log_ageArr, b=ebvArr, c=metalArr, d=tauArr, e=alphaArr) $
+        else y_beta = [1.0]
+        
      endif else begin
-         y_tau = [1.0]
+        y_age = y_p(10d^log_ageArr, pdf, 0, a=ebvArr, b=metalArr, c=tauArr, $
+                    norm=norm)
+;apply the normalization:
+        pdf /= norm
+
+        y_ebv = y_p(ebvArr, pdf, 1, a=10d^log_ageArr, b=metalArr, c=tauArr)
+        y_metal = y_p(metalArr, pdf, 2, a=10d^log_ageArr, b=ebvArr, c=tauArr)
+        if n_tau gt 1 then begin
+           y_tau = y_p(tauArr, pdf, 3, a=10d^log_ageArr, b=ebvArr, c=metalArr)
+        endif else begin
+           y_tau = [1.0]
+        endelse
      endelse
-     
 
      ;; log Age
      getStats, log_ageArr, y_age, /log, $
@@ -569,24 +714,6 @@ PRO FITSED_FITCHISQ,  $
                hi68Index = tebv_hi68, $
                lo95Index = tebv_lo95, $
                hi95Index  = tebv_hi95
-
-     ;; Delta
-     getStats, deltaArr, y_delta, $
-               bestx = delta_best, $
-               bestIndex=tdelta_best, $
-               meanx = delta_mean, $
-               meanIndex=tdelta_mean, $
-               sigmax = delta_sigma, $
-               medianx = delta_median, $
-               medianIndex= tdelta_median, $
-               lo68x = delta_lo68, $
-               hi68x = delta_hi68, $
-               lo95x = delta_lo95, $
-               hi95x = delta_hi95, $
-               lo68Index = tdelta_lo68, $
-               hi68Index = tdelta_hi68, $
-               lo95Index = tdelta_lo95, $
-               hi95Index  = tdelta_hi95
 
      ;; Metallicity
      getStats, metalArr, y_metal, $
@@ -641,7 +768,80 @@ PRO FITSED_FITCHISQ,  $
                ttau_lo95    = 0.0   
                ttau_hi95    = 0.0   
      endelse                        
-   
+
+          ;; Alpha
+     if n_alpha gt 1 then begin
+     getStats, alphaArr, y_alpha, $
+               bestx = alpha_best, $
+               bestIndex=talpha_best, $
+               meanx = alpha_mean, $
+               meanIndex=talpha_mean, $
+               sigmax = alpha_sigma, $
+               medianx = alpha_median, $
+               medianIndex= talpha_median, $
+               lo68x = alpha_lo68, $
+               hi68x = alpha_hi68, $
+               lo95x = alpha_lo95, $
+               hi95x = alpha_hi95, $
+               lo68Index = talpha_lo68, $
+               hi68Index = talpha_hi68, $
+               lo95Index = talpha_lo95, $
+               hi95Index  = talpha_hi95
+     endif else begin
+               alpha_best     = 0.0   
+               talpha_best    = 0.0   
+               alpha_mean     = 0.0   
+               talpha_mean    = 0.0   
+               alpha_sigma    = 0.0   
+               alpha_median   = 0.0   
+               talpha_median  = 0.0   
+               alpha_lo68     = 0.0   
+               alpha_hi68     = 0.0   
+               alpha_lo95     = 0.0   
+               alpha_hi95     = 0.0   
+               talpha_lo68    = 0.0   
+               talpha_hi68    = 0.0   
+               talpha_lo95    = 0.0   
+               talpha_hi95    = 0.0   
+     endelse                        
+
+               ;; Beta
+     if n_beta gt 1 then begin
+     getStats, betaArr, y_beta, $
+               bestx = beta_best, $
+               bestIndex=tbeta_best, $
+               meanx = beta_mean, $
+               meanIndex=tbeta_mean, $
+               sigmax = beta_sigma, $
+               medianx = beta_median, $
+               medianIndex= tbeta_median, $
+               lo68x = beta_lo68, $
+               hi68x = beta_hi68, $
+               lo95x = beta_lo95, $
+               hi95x = beta_hi95, $
+               lo68Index = tbeta_lo68, $
+               hi68Index = tbeta_hi68, $
+               lo95Index = tbeta_lo95, $
+               hi95Index  = tbeta_hi95
+     endif else begin
+               beta_best     = 0.0   
+               tbeta_best    = 0.0   
+               beta_mean     = 0.0   
+               tbeta_mean    = 0.0   
+               beta_sigma    = 0.0   
+               beta_median   = 0.0   
+               tbeta_median  = 0.0   
+               beta_lo68     = 0.0   
+               beta_hi68     = 0.0   
+               beta_lo95     = 0.0   
+               beta_hi95     = 0.0   
+               tbeta_lo68    = 0.0   
+               tbeta_hi68    = 0.0   
+               tbeta_lo95    = 0.0   
+               tbeta_hi95    = 0.0   
+     endelse                        
+
+     
 ; Calculate stellar mass and SFR; Treated differently.  
 ; Need to sort-list masses over all of PDF, and
 ; start to add-up total PDF until confidence regions found.
@@ -666,6 +866,10 @@ PRO FITSED_FITCHISQ,  $
                           lo68Index=tsfr_lo68, hi68Index=tsfr_hi68, $
                           lo95Index=tsfr_lo95, hi95Index=tsfr_hi95)
 
+        ;; TO-DO:  SFR SFR SFR -- interupt this step to average over
+        ;;                        sfh with some timescale (probably
+        ;;                        100 Myr) and report that!!
+        
      endif ;; nomass
 
 ;;------------------------------------------------------------
@@ -673,18 +877,34 @@ PRO FITSED_FITCHISQ,  $
      x = (where(chisq eq min(chisq)))[0]
 ;; Define indices of the best-fit model for each index:
 
-     itau = x / n_metal / n_delta / n_ebv / n_age
-     imetal = (x - itau*n_age*n_ebv*n_delta*n_metal) / n_delta / n_ebv / n_age
-     idelta = (x - itau*n_age*n_ebv*n_delta*n_metal $
-               - imetal*n_age*n_ebv*n_delta) $
-              / n_ebv / n_age
-     iebv = (x - itau*n_age*n_ebv*n_delta*n_metal $
-             - imetal*n_age*n_ebv*n_delta $
-             - idelta*n_age*n_ebv) / n_age
-     iage = x - itau*n_age*n_ebv*n_delta*n_metal $
-            - imetal*n_age*n_ebv*n_delta $
-            - idelta*n_age*n_ebv $
-            - iebv*n_age
+     if strcmp(sfh,'dpl') then begin
+        ibeta= x / n_metal / n_tau / n_alpha / n_ebv / n_age
+        ialpha= (x-ibeta*n_age*n_ebv*n_metal*n_tau*n_alpha) / n_tau / n_metal / n_ebv / n_age
+        itau = (x - ibeta*n_age*n_ebv*n_metal*n_tau*n_alpha $
+                - ialpha*n_age*n_ebv*n_tau*n_metal) $
+               / n_ebv / n_age / n_metal
+        imetal = (x -ibeta*n_age*n_ebv*n_metal*n_tau*n_alpha $
+                  - ialpha*n_age*n_ebv*n_tau*n_metal $
+                  -itau*n_age*n_ebv*n_metal) / n_ebv / n_age
+        iebv = (x - ibeta*n_age*n_ebv*n_metal*n_tau*n_alpha $
+                - ialpha*n_age*n_ebv*n_tau*n_metal $
+                -itau*n_age*n_ebv*n_metal $
+                -imetal*n_age*n_ebv) /  n_age
+        iage = x - ibeta*n_age*n_ebv*n_metal*n_tau*n_alpha $
+               - ialpha*n_age*n_ebv*n_tau*n_metal $
+               - itau*n_age*n_ebv*n_metal $
+               - imetal*n_age*n_ebv $
+               - iebv*n_age
+     endif else begin
+        itau = x / n_metal / n_ebv / n_age
+        imetal = (x - itau*n_age*n_ebv*n_metal) / n_ebv / n_age
+        iebv = (x - itau*n_age*n_ebv*n_metal $
+                - imetal*n_age*n_ebv) / n_age
+        iage = x - itau*n_age*n_ebv*n_metal $
+               - imetal*n_age*n_ebv $
+               - iebv*n_age
+     endelse
+     
      
 ;; make result structure:
      delvarx, result
@@ -729,66 +949,128 @@ PRO FITSED_FITCHISQ,  $
                           lo95_ind: tsfr_lo95, $
                           hi95_ind: tsfr_hi95 }
         endelse
-        
-        result = {y_age: y_age, $
-                  y_ebv:y_ebv, $
-                  y_metal: y_metal, $
-                  y_delta:y_delta, $
-                  y_tau: y_tau, $
-                  y_mass: y_mass, $
-                  y_sfr: y_sfr, $
-                  minchisq: chisq[x], $
-                  norm: norm,$
-                  log_age: {mean: log_age_mean, sigma: log_age_sigma, $
-                            mean_ind: tlog_age_mean,$
-                            minchisq_ind: iage, minchisq: log_ageArr[iage], $
-                            maxpdf_ind: tlog_age_median, maxpdf: log_ageArr[tlog_age_best], $
-                            median: log_age_median, median_ind: tlog_age_median, $
-                            lo68_ind: tlog_age_lo68, hi68_ind: tlog_age_hi68, $
-                            lo95_ind: tlog_age_lo95, hi95_ind: tlog_age_hi95, $
-                            lo68: log_age_lo68, hi68: log_age_hi68, $
-                            lo95: log_age_lo95, hi95: log_age_hi95 }, $
-                  ebv: {mean: ebv_mean, sigma: ebv_sigma, $
-                        mean_ind: tebv_mean,$
-                        minchisq_ind: iebv, minchisq: ebvArr[iebv], $
-                        maxpdf_ind: tebv_median, maxpdf: ebvArr[tebv_best], $
-                        median: ebv_median, median_ind: tebv_median, $
-                        lo68_ind: tebv_lo68, hi68_ind: tebv_hi68, $
-                        lo95_ind: tebv_lo95, hi95_ind: tebv_hi95, $
-                        lo68: ebv_lo68, hi68: ebv_hi68, $
-                        lo95: ebv_lo95, hi95: ebv_hi95 }, $
-                  metal: {mean: metal_mean, sigma: metal_sigma, $
-                          mean_ind: tmetal_mean,$
-                          minchisq_ind: imetal, minchisq: metalArr[imetal], $
-                          maxpdf_ind: tmetal_median, maxpdf: metalArr[tmetal_best], $
-                          median: metal_median, median_ind: tmetal_median, $
-                          lo68_ind: tmetal_lo68, hi68_ind: tmetal_hi68, $
-                          lo95_ind: tmetal_lo95, hi95_ind: tmetal_hi95, $
-                          lo68: metal_lo68, hi68: metal_hi68, $
-                          lo95: metal_lo95, hi95: metal_hi95 }, $
-                  delta: {mean: delta_mean, sigma: delta_sigma, $
-                          mean_ind: tdelta_mean,$
-                          minchisq_ind: idelta, minchisq: deltaArr[idelta], $
-                          maxpdf_ind: tdelta_median, maxpdf: deltaArr[tdelta_best], $
-                          median: delta_median, median_ind: tdelta_median, $
-                          lo68_ind: tdelta_lo68, hi68_ind: tdelta_hi68, $
-                          lo95_ind: tdelta_lo95, hi95_ind: tdelta_hi95, $
-                          lo68: delta_lo68, hi68: delta_hi68, $
-                          lo95: delta_lo95, hi95: delta_hi95 }, $
-                  tau: {mean: tau_mean, sigma: tau_sigma, $
-                        mean_ind: ttau_mean,$
-                        minchisq_ind: itau, minchisq: tauArr[itau], $
-                        maxpdf_ind: ttau_median, maxpdf: tauArr[ttau_best], $
-                        median: tau_median, median_ind: ttau_median, $
-                        lo68_ind: ttau_lo68, hi68_ind: ttau_hi68, $
-                        lo95_ind: ttau_lo95, hi95_ind: ttau_hi95, $
-                        lo68: tau_lo68, hi68: tau_hi68, $
-                        lo95: tau_lo95, hi95: tau_hi95 }, $
-                  mass: mass_struct, sfr: sfr_struct $
-                 } 
 
-     endelse
-  endelse
+        if strcmp(sfh,'dpl') then $
+           result = {y_age: y_age, $
+                     y_ebv:y_ebv, $
+                     y_metal: y_metal, $
+                     y_tau: y_tau, $
+                     y_alpha:y_alpha, $
+                     y_beta:y_beta, $
+                     y_mass: y_mass, $
+                     y_sfr: y_sfr, $
+                     minchisq: chisq[x], $
+                     norm: norm,$
+                     log_age: {mean: log_age_mean, sigma: log_age_sigma, $
+                               mean_ind: tlog_age_mean,$
+                               minchisq_ind: iage, minchisq: log_ageArr[iage], $
+                               maxpdf_ind: tlog_age_median, maxpdf: log_ageArr[tlog_age_best], $
+                               median: log_age_median, median_ind: tlog_age_median, $
+                               lo68_ind: tlog_age_lo68, hi68_ind: tlog_age_hi68, $
+                               lo95_ind: tlog_age_lo95, hi95_ind: tlog_age_hi95, $
+                               lo68: log_age_lo68, hi68: log_age_hi68, $
+                               lo95: log_age_lo95, hi95: log_age_hi95 }, $
+                     ebv: {mean: ebv_mean, sigma: ebv_sigma, $
+                           mean_ind: tebv_mean,$
+                           minchisq_ind: iebv, minchisq: ebvArr[iebv], $
+                           maxpdf_ind: tebv_median, maxpdf: ebvArr[tebv_best], $
+                           median: ebv_median, median_ind: tebv_median, $
+                           lo68_ind: tebv_lo68, hi68_ind: tebv_hi68, $
+                           lo95_ind: tebv_lo95, hi95_ind: tebv_hi95, $
+                           lo68: ebv_lo68, hi68: ebv_hi68, $
+                           lo95: ebv_lo95, hi95: ebv_hi95 }, $
+                     metal: {mean: metal_mean, sigma: metal_sigma, $
+                             mean_ind: tmetal_mean,$
+                             minchisq_ind: imetal, minchisq: metalArr[imetal], $
+                             maxpdf_ind: tmetal_median, maxpdf: metalArr[tmetal_best], $
+                             median: metal_median, median_ind: tmetal_median, $
+                             lo68_ind: tmetal_lo68, hi68_ind: tmetal_hi68, $
+                             lo95_ind: tmetal_lo95, hi95_ind: tmetal_hi95, $
+                             lo68: metal_lo68, hi68: metal_hi68, $
+                             lo95: metal_lo95, hi95: metal_hi95 }, $
+                     tau: {mean: tau_mean, sigma: tau_sigma, $
+                           mean_ind: ttau_mean,$
+                           minchisq_ind: itau, minchisq: tauArr[itau], $
+                           maxpdf_ind: ttau_median, maxpdf: tauArr[ttau_best], $
+                           median: tau_median, median_ind: ttau_median, $
+                           lo68_ind: ttau_lo68, hi68_ind: ttau_hi68, $
+                           lo95_ind: ttau_lo95, hi95_ind: ttau_hi95, $
+                           lo68: tau_lo68, hi68: tau_hi68, $
+                           lo95: tau_lo95, hi95: tau_hi95 }, $
+                     alpha: {mean: alpha_mean, sigma: alpha_sigma, $
+                             mean_ind: talpha_mean,$
+                             minchisq_ind: ialpha, minchisq: alphaArr[ialpha], $
+                             maxpdf_ind: talpha_median, maxpdf: alphaArr[talpha_best], $
+                             median: alpha_median, median_ind: talpha_median, $
+                             lo68_ind: talpha_lo68, hi68_ind: talpha_hi68, $
+                             lo95_ind: talpha_lo95, hi95_ind: talpha_hi95, $
+                             lo68: alpha_lo68, hi68: alpha_hi68, $
+                             lo95: alpha_lo95, hi95: alpha_hi95 }, $
+                     beta: {mean: beta_mean, sigma: beta_sigma, $
+                             mean_ind: tbeta_mean,$
+                             minchisq_ind: ibeta, minchisq: betaArr[ibeta], $
+                             maxpdf_ind: tbeta_median, maxpdf: betaArr[tbeta_best], $
+                             median: beta_median, median_ind: tbeta_median, $
+                             lo68_ind: tbeta_lo68, hi68_ind: tbeta_hi68, $
+                             lo95_ind: tbeta_lo95, hi95_ind: tbeta_hi95, $
+                             lo68: beta_lo68, hi68: beta_hi68, $
+                             lo95: beta_lo95, hi95: beta_hi95 }, $
+                     mass: mass_struct, sfr: sfr_struct $
+                    } $
+        else $
+           result = {y_age: y_age, $
+                     y_ebv:y_ebv, $
+                     y_metal: y_metal, $
+                     y_tau: y_tau, $
+                     y_mass: y_mass, $
+                     y_sfr: y_sfr, $
+                     minchisq: chisq[x], $
+                     norm: norm,$
+                     log_age: {mean: log_age_mean, sigma: log_age_sigma, $
+                               mean_ind: tlog_age_mean,$
+                               minchisq_ind: iage, minchisq: log_ageArr[iage], $
+                               maxpdf_ind: tlog_age_median, maxpdf: log_ageArr[tlog_age_best], $
+                               median: log_age_median, median_ind: tlog_age_median, $
+                               lo68_ind: tlog_age_lo68, hi68_ind: tlog_age_hi68, $
+                               lo95_ind: tlog_age_lo95, hi95_ind: tlog_age_hi95, $
+                               lo68: log_age_lo68, hi68: log_age_hi68, $
+                               lo95: log_age_lo95, hi95: log_age_hi95 }, $
+                     ebv: {mean: ebv_mean, sigma: ebv_sigma, $
+                           mean_ind: tebv_mean,$
+                           minchisq_ind: iebv, minchisq: ebvArr[iebv], $
+                           maxpdf_ind: tebv_median, maxpdf: ebvArr[tebv_best], $
+                           median: ebv_median, median_ind: tebv_median, $
+                           lo68_ind: tebv_lo68, hi68_ind: tebv_hi68, $
+                           lo95_ind: tebv_lo95, hi95_ind: tebv_hi95, $
+                           lo68: ebv_lo68, hi68: ebv_hi68, $
+                           lo95: ebv_lo95, hi95: ebv_hi95 }, $
+                     metal: {mean: metal_mean, sigma: metal_sigma, $
+                             mean_ind: tmetal_mean,$
+                             minchisq_ind: imetal, minchisq: metalArr[imetal], $
+                             maxpdf_ind: tmetal_median, maxpdf: metalArr[tmetal_best], $
+                             median: metal_median, median_ind: tmetal_median, $
+                             lo68_ind: tmetal_lo68, hi68_ind: tmetal_hi68, $
+                             lo95_ind: tmetal_lo95, hi95_ind: tmetal_hi95, $
+                             lo68: metal_lo68, hi68: metal_hi68, $
+                             lo95: metal_lo95, hi95: metal_hi95 }, $
+                     tau: {mean: tau_mean, sigma: tau_sigma, $
+                           mean_ind: ttau_mean,$
+                           minchisq_ind: itau, minchisq: tauArr[itau], $
+                           maxpdf_ind: ttau_median, maxpdf: tauArr[ttau_best], $
+                           median: tau_median, median_ind: ttau_median, $
+                           lo68_ind: ttau_lo68, hi68_ind: ttau_hi68, $
+                           lo95_ind: ttau_lo95, hi95_ind: ttau_hi95, $
+                           lo68: tau_lo68, hi68: tau_hi68, $
+                           lo95: tau_lo95, hi95: tau_hi95 }, $
+                     mass: mass_struct, sfr: sfr_struct $
+                    } 
+           
+     endelse ;; badobj=0
+     
+     
+  endelse ;; back to BWS edit... don't know what that is
+
+  ;stop
 
 end
 

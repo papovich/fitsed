@@ -14,6 +14,7 @@ pro fitsed_bcspectrum, isedfile,  z, mass, tage, tebv, $
                        nebular_lya_offset=nebular_lya_offset,$
                        endian=endian, $
                        high_res=high_res, $
+                       stop=stop, $
                        EXTINCTION_LAW=EXTINCTION_LAW
 
 ; outspectrum is returned and is 2D array with
@@ -47,6 +48,8 @@ else $
                  metallicity=metalZ,endian=endian
   bciage = (where( abs(bcage[1:*] - tage) eq $
                    min(abs(bcage[1:*] - tage)) ) )[0]
+  c4bciage = (where( abs(c4.logage[*] - alog10(tage)) eq $
+                     min(abs(c4.logage[*] - alog10(tage))) ) )[0]
   tspec = fltarr(2,n_elements(bcspec[0,*]))
   tspec[0,*] = bcspec[0,*]
   tspec[1,*] = bcspec[bciage+1,*]
@@ -96,13 +99,13 @@ else $
   scale = (mass) * 3.839d33 / 4. / !dpi  / $
           double(fitsed_luminosity_distance_nu(z,h=!h, omega=!omega, $
                                                lambda=!lambda))^2 / $
-          (3.085d24)^2  / 1d-29 / c4.mstar[bciage]
+          (3.085d24)^2  / 1d-29 / c4.mstar[c4bciage]
 
 
   outspectrum[1,*] = outspectrum[1,*] * outspectrum[0,*]^2 /$
                      2.998d18*scale
   outspectrum[0,*] = outspectrum[0,*]*(1+z)
-
+  if keyword_set(stop) then stop
 return
 end
   
