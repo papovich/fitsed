@@ -1,0 +1,66 @@
+#... FITSED v3.0 parameter file .........................................
+
+#--- INPUT INFORMATION
+
+CATALOG        = 'hdfn_fs99.cat'
+CATALOG_PATH   = './'			# needs trailing '/'
+AB_ZEROPOINT   = 25.			# 23.9 for uJy values in catalog
+FILTERS_RES    = '../inputs/FILTER.RES'
+ERR_FLX_FACTOR = 0.05			# fraction of flux to add in quadrature to errors
+# TEMP_ERR_FILE  = './TEMPLATE_ERROR.fast.v0.2'  
+NAME_ZPHOT     = 'z_p'
+NAME_ZSPEC     = 'z_spec'
+
+#--- OUTPUT INFORMATION  -----------------------------------------------
+
+LUT_FILE       = 'fitsed_lut_hdfn_fs99_bc03_chab_Zsol_dpl_calzetti.sav' # Look up table file name (if '' then will be default)
+
+
+SAVEFILE_DIR   = 'fitsed_dpl/'	# director for object .sav files, needs trailing '/'	
+WRITE_SAVE     = 1			# 0=no object .sav file, 1=write it out
+SAVEFILE_HEAD  = ''			# header of each object's .sav file
+
+OUTPUT_FILE	= ''			# if blank, then same as input catalog with '.fitsed.cat' extension
+
+SKIP_FIT       = 1			# 0=do fit / 1=fitting is skipped (useful for rewriting out catalog from existing fits)
+
+LIBRARY_DIR    = '/Users/papovich/Source/bc/bc03_2016/mymodels/dpl/'
+LIBRARY        = 'bc03'			# 'bc03' / others soon
+IMF            = 'chab'			# 'chab' / 'salp' / others... 
+EXTINCTION_LAW = 'calzetti'		# 'calzetti' / 'mw' / 'kc' / 'noll'
+NEBULAR_FESC   = 1.0			# 0.0 = add emission lines, 1.0= no emission lines, 0.5/0.9/x = add emission lines at 50%/10%/100(1-x)%, etc.
+#
+RESTLAM_LOWERLIMIT = 912.       # rest-frame wavelength below which you ignore photometry. 
+
+#--- DEFINE GRID PARAMETERS
+
+TAU		= [0.03,0.1,0.3,1.0,3.0] # Gyr, must be specific
+SFH		= 'dpl' 			       # 'exp', 'delayed',  'dpl' or ''double-power-law' . 
+LOG_AGE_MIN    = 7.0			# log [yr]
+LOG_AGE_MAX    = 10.0 			# log [yr]
+LOG_AGE_STEP   = 0.2			# log [yr]
+ALPHA	          = [0.5,1.0,2.0] # for DPL set to [0] if not used
+BETA		  = [0.5,1.0,2.0] # for DPL set to [0] if not used
+AGELTUNIVERSE  = 1			# 0 / 1 = restrict age to be less than age of Univese at given z
+# The configuration here is 35M for the .sav file
+
+Z_MIN          = 0.01                   # Cannot be 0.  
+Z_MAX          = 6.00   
+Z_STEP         = 0.05
+Z_LOG	       = 0			# 0: Z_STEP, 1: Z_STEP*(1+z)
+EBV_MIN        = 0.0			# [color excess]
+EBV_MAX        = 0.7        		# [color excess]
+EBV_STEP       = 0.05       		# [step]
+DELTA_MIN      = 0.0			# for "other" dust laws
+DELTA_MAX      = 0.0			
+DELTA_STEP     = 0.0
+#METAL          = [0.004,0.008,0.02]  	        # [see above]
+METAL          = [0.02]  	        # [see above]
+
+
+#--- COSMOLOGY 
+
+H0             = 70.0       		# Hubble constant
+OMEGA_M        = 0.3             	# Omega matter
+OMEGA_L        = 0.7             	# Omega lambda 
+
