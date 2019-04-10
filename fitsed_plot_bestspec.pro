@@ -94,7 +94,7 @@ pro fitsed_plot_bestspec, id, $
               alphastr = strtrim(string(format='(f3.1)', result.alpha.minchisq),2)
               alphastr = repstr(alphastr,'.','p')
            endif else if result.alpha.minchisq le 1000 then begin
-              alphastr[i] = strtrim(string(format='(I4)', result.alpha.minchisq),2)
+              alphastr = strtrim(string(format='(I4)', result.alpha.minchisq),2)
            endif
            if result.beta.minchisq lt 2 then begin
               betastr = strtrim(string(format='(f3.1)', result.beta.minchisq),2)
