@@ -20,7 +20,7 @@
 ; 
 ; functions called by fitchisq: 
 
-function calc_mass, mass, pdf, mst=mst, $
+function old_calc_mass, mass, pdf, mst=mst, $
                     mass_best = mass_best, bestIndex=bestIndex, $
                     mass_mean = mass_mean, meanIndex=meanIndex, $
                     mass_sigma=mass_sigma, $
@@ -281,7 +281,7 @@ end
 ;; If calculating errors (almost always are) then derive cummulative
 ;; distributions.
 
-function y_p, x, pdf, i_x, a=a, b=b, c=c, norm=norm
+function old_y_p, x, pdf, i_x, a=a, b=b, c=c, norm=norm
 ;; this function takes the PDF, and integrates over a, b, c, and d to
 ;; get y(x), the posterior for x (marginalized over the other
 ;; parameters).
@@ -342,7 +342,7 @@ function y_p, x, pdf, i_x, a=a, b=b, c=c, norm=norm
 
 END
 
-function y_p6, x, pdf, i_x, a=a, b=b, c=c, d=d, e=e, norm=norm
+function old_y_p6, x, pdf, i_x, a=a, b=b, c=c, d=d, e=e, norm=norm
 ;; Same as y_p, but allows 5 variables (age, ebv, metal, tau, alpha,
 ;; beta) this function takes the PDF, and integrates over a, b, c, and d to
 ;; get y(x), the posterior for x (marginalized over the other
@@ -647,33 +647,33 @@ PRO FITSED_FITCHISQ,  $
 ;; Integrate over everything:
 
      if strcmp(sfh,'dpl') then begin
-        y_age = y_p6(10d^log_ageArr, pdf, 0, a=ebvArr, b=metalArr, c=tauArr, d=alphaArr, e=betaArr,$
+        y_age = fitsed_yp6(10d^log_ageArr, pdf, 0, a=ebvArr, b=metalArr, c=tauArr, d=alphaArr, e=betaArr,$
                      norm=norm)
 ;apply the normalization:
         pdf /= norm
         
-        y_ebv = y_p6(ebvArr, pdf, 1, a=10d^log_ageArr, b=metalArr, c=tauArr, d=alphaArr, e=betaArr)
-        y_metal = y_p6(metalArr, pdf, 2, a=10d^log_ageArr, b=ebvArr, c=tauArr, d=alphaArr, e=betaArr)
+        y_ebv = fitsed_yp6(ebvArr, pdf, 1, a=10d^log_ageArr, b=metalArr, c=tauArr, d=alphaArr, e=betaArr)
+        y_metal = fitsed_yp6(metalArr, pdf, 2, a=10d^log_ageArr, b=ebvArr, c=tauArr, d=alphaArr, e=betaArr)
         if n_tau gt 1 then $
-           y_tau = y_p6(tauArr, pdf, 3, a=10d^log_ageArr, b=ebvArr, c=metalArr, d=AlphaArr, e=betaArr) $
+           y_tau = fitsed_yp6(tauArr, pdf, 3, a=10d^log_ageArr, b=ebvArr, c=metalArr, d=AlphaArr, e=betaArr) $
         else   y_tau = [1.0]
         if n_alpha gt 1 then $
-           y_alpha = y_p6(alphaArr, pdf, 4, a=10d^log_ageArr, b=ebvArr, c=metalArr, d=tauArr, e=betaArr) $
+           y_alpha = fitsed_yp6(alphaArr, pdf, 4, a=10d^log_ageArr, b=ebvArr, c=metalArr, d=tauArr, e=betaArr) $
         else y_alpha = [1.0]
         if n_beta gt 1 then $
-           y_beta = y_p6(betaArr, pdf, 5, a=10d^log_ageArr, b=ebvArr, c=metalArr, d=tauArr, e=alphaArr) $
+           y_beta = fitsed_yp6(betaArr, pdf, 5, a=10d^log_ageArr, b=ebvArr, c=metalArr, d=tauArr, e=alphaArr) $
         else y_beta = [1.0]
         
      endif else begin
-        y_age = y_p(10d^log_ageArr, pdf, 0, a=ebvArr, b=metalArr, c=tauArr, $
+        y_age = fitsed_yp(10d^log_ageArr, pdf, 0, a=ebvArr, b=metalArr, c=tauArr, $
                     norm=norm)
 ;apply the normalization:
         pdf /= norm
 
-        y_ebv = y_p(ebvArr, pdf, 1, a=10d^log_ageArr, b=metalArr, c=tauArr)
-        y_metal = y_p(metalArr, pdf, 2, a=10d^log_ageArr, b=ebvArr, c=tauArr)
+        y_ebv = fitsed_yp(ebvArr, pdf, 1, a=10d^log_ageArr, b=metalArr, c=tauArr)
+        y_metal = fitsed_yp(metalArr, pdf, 2, a=10d^log_ageArr, b=ebvArr, c=tauArr)
         if n_tau gt 1 then begin
-           y_tau = y_p(tauArr, pdf, 3, a=10d^log_ageArr, b=ebvArr, c=metalArr)
+           y_tau = fitsed_yp(tauArr, pdf, 3, a=10d^log_ageArr, b=ebvArr, c=metalArr)
         endif else begin
            y_tau = [1.0]
         endelse
@@ -846,7 +846,7 @@ PRO FITSED_FITCHISQ,  $
 ; Need to sort-list masses over all of PDF, and
 ; start to add-up total PDF until confidence regions found.
      if not keyword_set(nomass) then begin
-        y_mass = calc_mass(mass, pdf, mst=mst, $
+        y_mass = fitsed_calc_pmass(mass, pdf, mst=mst, $
                            mass_best = mass_best, bestIndex=tmass_best, $
                            mass_mean = mass_mean, meanIndex=tmass_mean, $
                            mass_sigma=mass_sigma, $
@@ -856,7 +856,7 @@ PRO FITSED_FITCHISQ,  $
                            lo68Index=tmass_lo68, hi68Index=tmass_hi68, $
                            lo95Index=tmass_lo95, hi95Index=tmass_hi95)
         
-        y_sfr = calc_mass(sfr, pdf, mst=sft, $
+        y_sfr = fitsed_calc_pmass(sfr, pdf, mst=sft, $
                           mass_best = sfr_best, bestIndex=tsfr_best, $
                           mass_mean = sfr_mean, meanIndex=tsfr_mean, $
                           mass_sigma=sfr_sigma, $
