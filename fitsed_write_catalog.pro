@@ -142,14 +142,14 @@ pro fitsed_write_catalog, p, data=data, paramfile=paramfile
      ;;if not keyword_set(bestfit) then begin
      if ~bestfit then begin
         if strcmp(p.sfh,'dpl') then $
-           format = '(i8,x,f6.3,x, 3(f7.3,x), 3(F6.1, x), 3(F6.1,x), 3(f7.4,x), 3(f7.2,x), 3(f6.2,x), 3(f8.2,x), 3(f9.3,x))' $
+           format = '(i10,x,f6.3,x, 3(f7.3,x), 3(F6.1, x), 3(F6.1,x), 3(f7.4,x), 3(f7.2,x), 3(f6.2,x), 3(f8.2,x), 3(f9.3,x))' $
         else $
-           format = '(i8,x,f6.3,x, 3(f7.3,x), 3(f7.4,x), 3(f7.2,x), 3(f6.2,x),3(f8.2,x), 3(f9.3,x))'
+           format = '(i10,x,f6.3,x, 3(f7.3,x), 3(f7.4,x), 3(f7.2,x), 3(f6.2,x),3(f8.2,x), 3(f9.3,x))'
      endif else begin
         if strcmp(p.sfh,'dpl') then $
-           format = '(i8,x,f6.3,x, 1(f7.3,x), 1(F6.1,x), 1(F6.2,x), 1(f7.4,x), 1(f7.2,x), 1(f6.2,x), 1(f8.2,x), 1(f9.3,x))' $
+           format = '(i10,x,f6.3,x, 1(f7.3,x), 1(F6.1,x), 1(F6.2,x), 1(f7.4,x), 1(f7.2,x), 1(f6.2,x), 1(f8.2,x), 1(f9.3,x))' $
         else $
-           format = '(i8,x,f6.3,x, 1(f7.3,x), 1(f7.4,x), 1(f7.2,x), 1(f6.2,x), 1(f8.2,x), 1(f9.3,x))'
+           format = '(i10,x,f6.3,x, 1(f7.3,x), 1(f7.4,x), 1(f7.2,x), 1(f6.2,x), 1(f8.2,x), 1(f9.3,x))'
      endelse
      
      for i=0,n_elements(id)-1 do begin
